@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Chat2Blend Fixture</title>
+  <style>
+    body { font: 14px/1.5 system-ui, sans-serif; max-width: 640px; margin: 2em auto; padding: 1em; }
+    .msg { border: 1px solid #ddd; border-radius: 8px; padding: 1em; margin: 1em 0; }
+    .assistant { background: #f6f6f6; }
+    pre { background: #1e1e1e; color: #d4d4d4; padding: 1em; border-radius: 6px; overflow: auto; }
+    button { padding: 0.6em 1em; font-size: 14px; border-radius: 6px; border: 1px solid #ccc; cursor: pointer; }
+    #stop { display: none; }
+  </style>
+</head>
+<body>
+  <h1>Chat2Blend Fixture</h1>
+  <p>This page mimics a ChatGPT assistant response. The Chat2Blend extension content script will inject here and stream chunks to the bridge.</p>
+  <button id="start">Start Streaming</button>
+  <button id="stop" data-testid="stop-button">Stop</button>
+
+  <div class="msg" data-message-author-role="user">Make a cube in Blender Python using C2B chunks.</div>
+  <div class="msg assistant" data-message-author-role="assistant" id="assistant">
+    <pre><code class="language-python" id="code"></code></pre>
+  </div>
+
+  <script>
+    const chunks = [
+      '# C2B:CHUNK setup\nimport bpy\n# C2B:END\n\n',
+      '# C2B:CHUNK geometry\nbpy.ops.mesh.primitive_cube_add(size=2, location=(0, 0, 1))\ncube = bpy.context.active_object\ncube.name = "Fixture_Cube"\n# C2B:END\n\n',
+    ];
+    const code = document.getElementById('code');
+    const startBtn = document.getElementById('start');
+    const stopBtn = document.getElementById('stop');
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    async function start() {
+      startBtn.disabled = true;
+      stopBtn.style.display = 'inline-block';
+      code.textContent = '';
+      for (let i = 0; i < chunks.length; i++) {
+        if (stopBtn.disabled) break;
+        // simulate streaming character by character / word by word
+        for (const line of chunks[i].split('\n')) {
+          code.textContent += line + '\n';
+          await sleep(40);
+        }
+      }
+      stopBtn.style.display = 'none';
+      startBtn.disabled = false;
+    }
+
+    startBtn.addEventListener('click', start);
+  </script>
+</body>
+</html>

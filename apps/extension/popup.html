@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root { --bg: #f7f7f7; --text: #111; --ok: #2e7d32; --warn: #b71c1c; --muted: #666; }
+    body { width: 340px; margin: 0; padding: 14px; font: 13px system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); }
+    .row { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+    .row b { flex: 1; }
+    #badge { padding: 2px 8px; border-radius: 10px; color: #fff; font-weight: bold; font-size: 11px; }
+    #badge.ok { background: var(--ok); }
+    #badge.warn { background: var(--warn); }
+    .status { margin: 8px 0; padding: 8px; background: #fff; border-radius: 6px; border-left: 3px solid #1976d2; }
+    .pair { display: flex; gap: 6px; margin: 8px 0; }
+    .pair input { flex: 1; padding: 6px; font: 13px monospace; border: 1px solid #ccc; border-radius: 4px; }
+    button { padding: 6px 10px; border: 1px solid #bbb; border-radius: 5px; background: #fff; cursor: pointer; }
+    button:hover { background: #e3f2fd; }
+    .chunks { max-height: 160px; overflow-y: auto; background: #fff; border-radius: 6px; padding: 6px; margin: 8px 0; }
+    .job-title { font-weight: bold; margin-bottom: 4px; color: var(--muted); }
+    .chunk-row { display: flex; gap: 6px; padding: 2px 0; }
+    .chunk-icon { width: 16px; text-align: center; }
+    .chunk-name { flex: 1; }
+    .chunk-status { color: var(--muted); font-size: 11px; }
+    .muted { color: var(--muted); font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="row">
+      <b>Chat2Blend</b>
+      <span id="badge" class="warn">?</span>
+    </div>
+    <div class="status" id="status">Loading...</div>
+    <div class="pair" id="pairPanel">
+      <input id="code" type="text" placeholder="6-digit code" inputmode="numeric" maxlength="6" pattern="[0-9]{6}">
+      <button id="btnPair">Pair</button>
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="auto"> Auto Execute</label>
+    </div>
+    <div class="chunks" id="chunks">No chunks yet.</div>
+    <div class="row">
+      <button id="btnSend">Send Current Code</button>
+      <button id="btnPause">Pause</button>
+      <button id="btnCopy">Copy Prompt</button>
+    </div>
+    <div class="muted">Open ChatGPT, paste the C2B prompt, then turn Auto Execute on.</div>
+  </div>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
