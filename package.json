@@ -1,0 +1,26 @@
+{
+  "name": "chat2blend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Use your LLM subscription as the 3D brain. Let Blender execute.",
+  "license": "MIT",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "npm run build:ts && npm run build:extension",
+    "build:ts": "tsc -p tsconfig.json",
+    "build:extension": "node scripts/build-extension.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build:ts && node --test \"dist/**/*.test.js\"",
+    "package:blender": "node scripts/package-blender.mjs",
+    "c2b": "node dist/apps/bridge/src/cli.js"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.287",
+    "@types/node": "^22.7.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.0"
+  }
+}

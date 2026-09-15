@@ -1,0 +1,28 @@
+node_modules/
+dist/
+.npm-cache/
+*.tsbuildinfo
+
+# local toolchain downloaded for verification (huge)
+_tools/
+
+# bridge runtime state (contains the local token - never commit)
+.state/
+*.log
+logs/
+
+# Blender junk
+*.blend1
+*.blend2
+*.blend@
+blender_addon/chat2blend/__pycache__/
+__pycache__/
+*.pyc
+
+# packaged artifacts
+*.zip
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
