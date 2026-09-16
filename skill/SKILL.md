@@ -17,7 +17,7 @@ Use when the user asks for:
 - "Make a game asset"
 - Anything involving `bpy` or procedural Blender geometry
 
-## Harness workflow
+## Brain workflow (recommended)
 
 1. **Check the bridge**
 
@@ -37,31 +37,40 @@ Use when the user asks for:
 
    > Open Blender, Edit > Preferences > Add-ons > Install, choose `dist/chat2blend-blender.zip`, enable Chat2Blend, then click Connect in the N-panel.
 
-4. **Submit the task** — the agent never writes the model
+4. **Attach the local brain** — only once per session
+
+   Make sure the ChatGPT desktop app is running and logged in, then run:
 
    ```bash
-   c2b harness "a modern three-seat fabric sofa"
+   c2b brain-attach
    ```
 
-   This creates a job, generates the C2B protocol prompt, and the browser extension will
-   auto-fill it into the ChatGPT composer. The user only presses Send (auto-submit is off by
-   default).
+   This launches or connects to the ChatGPT desktop app on `127.0.0.1:9333`.
 
-5. **Poll compact status**
+5. **Submit the task** — the agent never writes the model
 
    ```bash
-   c2b harness --wait "a modern three-seat fabric sofa"
+   c2b brain "a modern three-seat fabric sofa"
+   ```
+
+   This opens a fresh ChatGPT chat, fills the C2B protocol prompt, and waits for the desktop app
+   to generate Blender Python chunks.
+
+6. **Poll compact status**
+
+   ```bash
+   c2b brain --wait "a modern three-seat fabric sofa"
    # or after you know the job id:
-   c2b harness-status <jobId>
+   c2b brain-status <jobId>
    ```
 
    The response contains chunk names/states and TTFF only — never the code.
 
-6. **Report**: chunk progress, TTFF, and confirmation that Blender has the model.
+7. **Report**: chunk progress, TTFF, and confirmation that Blender has the model.
 
 ## Manual fallback
 
-If the extension is not installed/paired, auto-delivery does nothing. Use the prompt command:
+If the ChatGPT desktop app is not installed or not logged in, use the prompt command:
 
 ```bash
 c2b prompt "task"
@@ -74,10 +83,11 @@ Copy the printed prompt into ChatGPT yourself.
 - `c2b status` — system status
 - `c2b start` / `c2b stop` — bridge control
 - `c2b doctor` — diagnostics
-- `c2b pair` — show pairing code for the browser extension
-- `c2b harness "<task>"` — submit a modeling task (agent mode)
-- `c2b harness "<task>" --wait` — submit and block until done
-- `c2b harness-status <jobId>` — compact job status (agent mode)
+- `c2b brain-attach` — attach / launch the local ChatGPT desktop app
+- `c2b brain "<task>"` — submit a modeling task to the local brain
+- `c2b brain "<task>" --wait` — submit and block until done
+- `c2b brain-status <jobId>` — compact job status (agent mode)
+- `c2b harness "<task>"` — legacy browser-extension path (deprecated)
 - `c2b jobs` — recent jobs
 - `c2b exec <file.py>` — send a Python file directly to Blender
 - `c2b prompt "task"` — print the standard C2B modeling prompt
@@ -91,6 +101,6 @@ Copy the printed prompt into ChatGPT yourself.
 
 ## Files
 
-- `apps/extension/dist` — browser extension
+- `apps/bridge/src/brain` — local ChatGPT desktop app driver
 - `dist/chat2blend-blender.zip` — Blender add-on package
 - `docs/AGENT_INTEGRATION.md` — full agent protocol

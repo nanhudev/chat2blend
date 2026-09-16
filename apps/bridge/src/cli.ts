@@ -13,6 +13,7 @@ import {
 } from "./config.js";
 import { isRunning, startDaemon, stopDaemon, tailLog, waitForHealth } from "./daemon.js";
 import { discoverBlender, blenderAddonsPaths } from "./blender-discovery.js";
+import { desktopStatus, findChatGptExe, DEFAULT_CDP_PORT } from "./brain/index.js";
 
 const STATE_DIR = process.env.C2B_STATE_DIR || defaultStateDir();
 
@@ -42,6 +43,20 @@ interface HarnessStatus {
   delivered: string;
 }
 
+/** Compact brain-task status (never contains generated code). */
+interface BrainTaskStatus {
+  jobId: string;
+  task: string;
+  brain: { kind: string; state: string; error?: string };
+  status: string;
+  chunkCount: number;
+  executedCount: number;
+  chunks: { name: string; status: string }[];
+  error?: { chunk: string; message?: string };
+  ttffMs?: number;
+  elapsedMs: number;
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -60,6 +75,9 @@ function usage(): void {
   line(`  jobs             List recent jobs`);
   line(`  exec <file.py>   Send a python file straight into Blender`);
   line(`  prompt <task>    Print the Chat2Blend modelling prompt for a task`);
+  line(`  brain <task>     [LOCAL BRAIN] Send a modelling task to the local ChatGPT desktop app`);
+  line(`  brain-attach     [LOCAL BRAIN] Attach to (or launch) the ChatGPT desktop app`);
+  line(`  brain-status [id]  [LOCAL BRAIN] Brain health, or compact job status`);
   line(`  harness <task>   [AGENT] Submit a modelling task, auto-deliver to the web LLM, poll status`);
   line(`  harness-status <jobId>   [AGENT] Compact job status (chunk names/states only)`);
   line(`  blender status   Show Blender discovery + connection`);
@@ -281,6 +299,95 @@ async function main(): Promise<void> {
       return;
     }
 
+    /* ---------------- local brain (ChatGPT desktop app) ---------------- */
+
+    case "brain-attach": {
+      const port = Number(flags["port"] ?? 9333);
+      const r = await api<{ brain: { attached: boolean; title?: string; composerFound: boolean; cdpPort: number } }>("/api/brain/attach", {
+        method: "POST",
+        body: JSON.stringify({ port, launch: flags["no-launch"] ? false : true }),
+      });
+      const b = r.brain;
+      line(`${b.attached ? C.ok : C.no}ChatGPT desktop ${b.attached ? `attached (port ${b.cdpPort}, window "${b.title ?? "?"}")` : "not attached"}`);
+      if (b.attached) line(`${b.composerFound ? C.ok : C.no}Composer ${b.composerFound ? "found - ready to model" : "not found - is the app logged in on a usable chat?"}`);
+      return;
+    }
+
+    case "brain-status": {
+      const jobId = args[0];
+      if (jobId) {
+        const s = await api<BrainTaskStatus>(`/api/brain/tasks/${jobId}`);
+        if (flags.json) {
+          line(JSON.stringify(s, null, 2));
+          return;
+        }
+        line(`${C.info}job     ${s.jobId}  ${s.status}`);
+        line(`${C.info}brain   ${s.brain.kind} (${s.brain.state})${s.brain.error ? " - " + s.brain.error : ""}`);
+        line(`${C.info}chunks  ${s.executedCount}/${s.chunkCount}`);
+        for (const c of s.chunks) line(`${C.info}  - ${c.name}: ${c.status}`);
+        if (s.error) line(`${C.no}${s.error.chunk}: ${s.error.message}`);
+        if (s.ttffMs !== undefined) line(`${C.info}TTFF    ${(s.ttffMs / 1000).toFixed(1)}s`);
+        return;
+      }
+      const r = await api<{ brain: { attached: boolean; cdpPort: number; exePath?: string; title?: string; composerFound: boolean; loggedIn?: boolean } }>("/api/brain/status");
+      const b = r.brain;
+      if (flags.json) {
+        line(JSON.stringify(r, null, 2));
+        return;
+      }
+      line(`${b.exePath ? C.ok : C.no}ChatGPT desktop app ${b.exePath ? b.exePath : "not found"}`);
+      line(`${b.attached ? C.ok : C.no}CDP port ${b.cdpPort} ${b.attached ? `attached (window "${b.title ?? "?"}")` : "not attached - run: c2b brain-attach"}`);
+      if (b.attached) {
+        line(`${b.composerFound ? C.ok : C.no}Composer ${b.composerFound ? "ready" : "not found"}`);
+        line(`${b.loggedIn ? C.ok : C.no}Logged in ${b.loggedIn ? "yes" : "no/unknown"}`);
+      }
+      return;
+    }
+
+    case "brain": {
+      const task = args.join(" ");
+      if (!task) {
+        line(`${C.no}Usage: c2b brain "<natural language modeling task>" [--wait] [--json]`);
+        process.exitCode = 1;
+        return;
+      }
+      const created = await api<{ jobId: string; provider: string }>("/api/brain/tasks", {
+        method: "POST",
+        body: JSON.stringify({ task }),
+      });
+      if (flags.json) line(JSON.stringify({ jobId: created.jobId, provider: created.provider }, null, 2));
+      else {
+        line(`${C.ok}Task sent to the local ChatGPT desktop app`);
+        line(`${C.info}job      ${created.jobId}`);
+        line(`${C.info}provider ${created.provider}`);
+        line(`${C.info}status   c2b brain-status ${created.jobId}`);
+      }
+
+      if (!flags.wait) return;
+
+      const timeoutMs = Number(flags["timeout"] ?? 300_000);
+      const deadline = Date.now() + timeoutMs;
+      let last: BrainTaskStatus | undefined;
+      while (Date.now() < deadline) {
+        await sleep(1500);
+        last = await api<BrainTaskStatus>(`/api/brain/tasks/${created.jobId}`);
+        if (!flags.json) {
+          line(`${C.info}[${last.brain.state}/${last.status}] chunks ${last.executedCount}/${last.chunkCount} ${last.chunks.map((c) => `${c.name}:${c.status}`).join(" ")}`);
+        }
+        if (last.status === "completed" || last.status === "failed" || last.status === "cancelled") break;
+        if (last.brain.state === "error") break;
+      }
+      if (flags.json) {
+        line(JSON.stringify(last, null, 2));
+      } else if (last) {
+        const ok = last.status === "completed";
+        line(ok ? `${C.ok}Job completed - chunks ${last.executedCount}/${last.chunkCount}` : `${C.no}Job ${last.status}${last.brain.error ? " (" + last.brain.error + ")" : ""}`);
+        if (last.error) line(`${C.no}${last.error.chunk}: ${last.error.message}`);
+        if (last.ttffMs !== undefined) line(`${C.info}TTFF ${(last.ttffMs / 1000).toFixed(1)}s`);
+      }
+      return;
+    }
+
     case "harness-status": {
       const jobId = args[0];
       if (!jobId) {
@@ -388,6 +495,14 @@ async function doctor(): Promise<void> {
 
   const addonSrc = path.resolve(__dirname, "..", "..", "..", "..", "blender_addon", "chat2blend", "__init__.py");
   line(`${fs.existsSync(addonSrc) ? C.ok : C.no}Blender add-on source ${fs.existsSync(addonSrc) ? "present" : "missing"}`);
+
+  // Local brain (ChatGPT desktop app)
+  const exe = findChatGptExe();
+  line(`${exe ? C.ok : C.no}ChatGPT desktop app ${exe ?? "not found - install the ChatGPT desktop app"}`);
+  if (exe) {
+    const st = await desktopStatus(DEFAULT_CDP_PORT);
+    line(`${st.attached ? C.ok : C.wait}Brain CDP port ${DEFAULT_CDP_PORT} ${st.attached ? "attached" : "not attached - run: c2b brain-attach"}`);
+  }
 }
 
 main().catch((err) => {

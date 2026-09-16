@@ -14,6 +14,7 @@
     "build:extension": "node scripts/build-extension.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build:ts && node --test \"dist/**/*.test.js\"",
+    "test:brain": "node scripts/e2e-brain.mjs",
     "package:blender": "node scripts/package-blender.mjs",
     "c2b": "node dist/apps/bridge/src/cli.js"
   },

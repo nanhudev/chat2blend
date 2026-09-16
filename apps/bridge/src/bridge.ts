@@ -18,6 +18,7 @@ import {
   type Route,
 } from "./http.js";
 import { VERSION, type BridgeConfig } from "./config.js";
+import { askDesktopBrain, ChatGptDesktop, DEFAULT_CDP_PORT, desktopStatus, findChatGptExe, type BrainAnswer } from "./brain/index.js";
 
 const CHUNK_TIMEOUT_MS = 120_000;
 const PAIR_CODE_TTL_MS = 10 * 60 * 1000;
@@ -74,6 +75,8 @@ export async function startBridge(opts: StartOptions = {}): Promise<BridgeInstan
   const startedAt = Date.now();
   /** pending harness tasks, keyed by jobId */
   const harnessTasks = new Map<string, HarnessTask>();
+  /** in-flight / finished runs of the local ChatGPT desktop brain, keyed by jobId */
+  const brainRuns = new Map<string, { task: string; startedAt: number; state: "running" | "done" | "error"; error?: string; answer?: BrainAnswer }>();
 
   let inFlight: InFlight | null = null;
   let lastExtensionHeartbeat: number | undefined;
@@ -518,6 +521,126 @@ export async function startBridge(opts: StartOptions = {}): Promise<BridgeInstan
         if (job && job.timing.generationStartedAt === undefined) job.timing.generationStartedAt = Date.now();
         logger.info(`harness task delivered to browser: job=${ctx.params.id}`);
         sendJson(ctx.res, 200, { ok: true });
+      },
+    },
+
+    /* ---------------------- brain (local ChatGPT desktop) -----------------
+     * The brain runs on this machine: we drive the installed ChatGPT desktop
+     * app over its local debugging port. No browser, no extension, no API key.
+     * The harness submits a task; the bridge turns the answer into chunks and
+     * streams them to Blender.
+     * --------------------------------------------------------------------- */
+
+    {
+      method: "GET",
+      pattern: "/api/brain/status",
+      handler: async (ctx) => {
+        if (!authorized(ctx)) return sendError(ctx.res, 401, "unauthorized");
+        const port = Number(ctx.url.searchParams.get("port") ?? DEFAULT_CDP_PORT);
+        let status;
+        try {
+          status = await desktopStatus(port);
+        } catch (err) {
+          status = { cdpPort: port, attached: false, composerFound: false, exePath: findChatGptExe() };
+        }
+        sendJson(ctx.res, 200, { ok: true, brain: { kind: "chatgpt-desktop", ...status }, runs: [...brainRuns.values()].length });
+      },
+    },
+    {
+      method: "POST",
+      pattern: "/api/brain/attach",
+      handler: async (ctx) => {
+        if (!authorized(ctx)) return sendError(ctx.res, 401, "unauthorized");
+        const body = (ctx.body ?? {}) as { port?: number; launch?: boolean };
+        const port = body.port ?? DEFAULT_CDP_PORT;
+        const desktop = new ChatGptDesktop(port);
+        try {
+          const status = await desktop.attach({ launch: body.launch ?? true });
+          logger.info(`brain attached: chatgpt-desktop port=${port} composer=${status.composerFound}`);
+          sendJson(ctx.res, 200, { ok: true, brain: { kind: "chatgpt-desktop", ...status } });
+        } catch (err) {
+          sendError(ctx.res, 502, (err as Error).message);
+        } finally {
+          desktop.close();
+        }
+      },
+    },
+    {
+      // Submit a modeling task to the local brain. Runs in the background.
+      method: "POST",
+      pattern: "/api/brain/tasks",
+      handler: (ctx) => {
+        if (!authorized(ctx)) return sendError(ctx.res, 401, "unauthorized");
+        const body = (ctx.body ?? {}) as { task?: string; title?: string; port?: number; timeoutMs?: number };
+        const task = (body.task ?? "").trim();
+        if (!task) return sendError(ctx.res, 400, "task is required");
+
+        const job = jobs.create({ provider: "chatgpt-desktop", title: body.title ?? task.slice(0, 120), mode: "protocol" });
+        job.timing.generationStartedAt = Date.now();
+        brainRuns.set(job.id, { task, startedAt: Date.now(), state: "running" });
+        logger.info(`brain task submitted: job=${job.id} task="${task.slice(0, 60)}"`);
+
+        void (async () => {
+          try {
+            const answer = await askDesktopBrain(task, { cdpPort: body.port ?? DEFAULT_CDP_PORT, timeoutMs: body.timeoutMs ?? 240_000 });
+            const chunks = answer.chunks.length > 0 ? answer.chunks : answer.pythonBlocks.map((code, i) => ({ name: `block-${i + 1}`, index: i, code, hash: sha256(code.trim()), startOffset: 0 }));
+            if (chunks.length === 0) throw new Error("the brain returned no Python code");
+            chunks.forEach((c, i) => {
+              jobs.addChunk(job.id, {
+                code: c.code,
+                hash: c.hash,
+                name: c.name,
+                index: c.index,
+                ...(i === chunks.length - 1 ? { final: true } : {}),
+              });
+            });
+            job.timing.generationCompletedAt = Date.now();
+            brainRuns.set(job.id, { task, startedAt: brainRuns.get(job.id)!.startedAt, state: "done", answer });
+            logger.info(`brain answer ready: job=${job.id} chunks=${chunks.length} mode=${answer.mode} (${answer.elapsedMs}ms)`);
+            dispatch();
+            finishJobIfDone(job.id);
+          } catch (err) {
+            const message = (err as Error).message;
+            brainRuns.set(job.id, { task, startedAt: brainRuns.get(job.id)?.startedAt ?? Date.now(), state: "error", error: message });
+            jobs.setJobStatus(job.id, "failed", message);
+            logger.error(`brain task failed: job=${job.id}: ${message}`);
+          }
+        })();
+
+        sendJson(ctx.res, 202, {
+          ok: true,
+          jobId: job.id,
+          provider: "chatgpt-desktop",
+          statusUrl: `http://${config.host}:${config.httpPort}/api/brain/tasks/${job.id}`,
+        });
+      },
+    },
+    {
+      method: "GET",
+      pattern: "/api/brain/tasks/:id",
+      handler: (ctx) => {
+        if (!authorized(ctx)) return sendError(ctx.res, 401, "unauthorized");
+        const job = jobs.get(ctx.params.id);
+        if (!job) return sendError(ctx.res, 404, "job not found");
+        const run = brainRuns.get(ctx.params.id);
+        const failed = job.chunks.find((c) => c.status === "failed");
+        const ttff =
+          job.timing.firstChunkExecutedAt !== undefined && job.timing.generationStartedAt !== undefined
+            ? job.timing.firstChunkExecutedAt - job.timing.generationStartedAt
+            : undefined;
+        sendJson(ctx.res, 200, {
+          ok: true,
+          jobId: job.id,
+          task: run?.task ?? job.title,
+          brain: { kind: "chatgpt-desktop", state: run?.state ?? "unknown", ...(run?.error ? { error: run.error.slice(0, 400) } : {}) },
+          status: job.status,
+          chunkCount: job.chunks.length,
+          executedCount: job.chunks.filter((c) => c.status === "completed").length,
+          chunks: job.chunks.map((c) => ({ name: c.name ?? `#${c.index}`, status: c.status })),
+          ...(failed ? { error: { chunk: failed.name ?? `#${failed.index}`, message: failed.error?.slice(0, 400) } } : {}),
+          ...(ttff !== undefined ? { ttffMs: ttff } : {}),
+          elapsedMs: Date.now() - job.createdAt,
+        });
       },
     },
   ];
