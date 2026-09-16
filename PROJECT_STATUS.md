@@ -39,8 +39,7 @@ The core loop is real and verified on Windows with Blender 4.2.9:
 2. **Extension popup** is implemented; live pairing flow has not been manually clicked through.
 3. **macOS / Linux** are not manually validated.
 4. **Extension icon** is a generated placeholder.
-5. **Push auth** required `gh auth login` (device flow) once — the GitHub MCP connector token has no repo-create scope.
-5. **Headless CI** is not yet configured.
+5. **Headless CI** is not yet configured (Blender GUI E2E requires a real desktop session).
 
 ## Test Results
 
@@ -68,6 +67,7 @@ Real GUI E2E:
 
 ## Next Actions
 
-- Push to GitHub.
-- Ask user to create/publish the GitHub repo if connector cannot create it.
+- [x] Push to GitHub — done: https://github.com/nanhudev/chat2blend (public)
 - Manual live-LLM validation with the fixture page and/or user's ChatGPT tab.
+- Headless Blender smoke test in CI.
+- Multi-provider capture adapters (Claude / Gemini / DeepSeek).
