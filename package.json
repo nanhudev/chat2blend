@@ -32,6 +32,8 @@
     "skill/**",
     "examples/**",
     "docs/**",
+    "!docs/assets/**",
+    "!docs/demo-cube.png",
     "README.md",
     "README.zh-CN.md",
     "CHANGELOG.md",

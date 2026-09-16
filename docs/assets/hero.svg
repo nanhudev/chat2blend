@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" width="1200" height="420" role="img" aria-label="Chat2Blend: describe an asset, watch Blender build it">
+  <title>Chat2Blend — Describe it. Watch Blender build it.</title>
+
+  <defs>
+    <linearGradient id="c2b-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1b1f27"/>
+      <stop offset="100%" stop-color="#12151b"/>
+    </linearGradient>
+    <linearGradient id="c2b-acc" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ff9d3c"/>
+      <stop offset="100%" stop-color="#ff6b35"/>
+    </linearGradient>
+    <marker id="c2b-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#6b7684"/>
+    </marker>
+    <filter id="c2b-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="7" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="420" fill="url(#c2b-bg)"/>
+
+  <!-- rounded container edge, so the dark artboard reads as an intentional
+       panel on GitHub's light theme instead of a raw dark rectangle -->
+  <rect x="0.75" y="0.75" width="1198.5" height="418.5" rx="14" fill="none"
+        stroke="#2f3743" stroke-width="1.5"/>
+
+  <!-- subtle viewport grid, echoing Blender's 3D viewport -->
+  <g stroke="#2b313c" stroke-width="1" opacity="0.75">
+    <path d="M0 105 H1200 M0 210 H1200 M0 315 H1200"/>
+    <path d="M200 0 V420 M400 0 V420 M600 0 V420 M800 0 V420 M1000 0 V420"/>
+  </g>
+  <g stroke="#38414f" stroke-width="1.4" opacity="0.9">
+    <path d="M0 210 H1200"/>
+    <path d="M600 0 V420"/>
+  </g>
+
+  <!-- ============ LEFT: the prompt ============ -->
+  <g>
+    <rect x="46" y="86" width="352" height="248" rx="12" fill="#171b22" stroke="#2f3743" stroke-width="1.5"/>
+    <circle cx="68" cy="110" r="5" fill="#ff5f57"/>
+    <circle cx="86" cy="110" r="5" fill="#febc2e"/>
+    <circle cx="104" cy="110" r="5" fill="#28c840"/>
+    <text x="68" y="146" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" fill="#7d8899">you type</text>
+
+    <rect x="68" y="160" width="308" height="54" rx="8" fill="#101317" stroke="#3a4452" stroke-width="1.2"/>
+    <text x="84" y="184" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" fill="#ffb066" font-weight="600">a modern three-seat</text>
+    <text x="84" y="205" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15" fill="#ffb066" font-weight="600">fabric sofa</text>
+
+    <text x="68" y="252" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" fill="#7d8899">‣ natural language</text>
+    <text x="68" y="278" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" fill="#7d8899">‣ no API key</text>
+    <text x="68" y="304" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" fill="#7d8899">‣ no copy / paste</text>
+
+    <text x="46" y="72" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" fill="#e6ebf2" font-weight="700" letter-spacing="0.2">Describe it</text>
+  </g>
+
+  <!-- ============ ARROW 1 ============ -->
+  <path d="M412 210 H468" stroke="#6b7684" stroke-width="2.2" marker-end="url(#c2b-arrow)"/>
+  <text x="440" y="196" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.5" fill="#8a94a3">prompt</text>
+
+  <!-- ============ MIDDLE: Chat2Blend pipeline ============ -->
+  <g>
+    <rect x="486" y="126" width="228" height="168" rx="12" fill="#171b22" stroke="#2f3743" stroke-width="1.5"/>
+    <text x="600" y="166" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="19" fill="#e6ebf2" font-weight="800" letter-spacing="0.4">Chat2Blend</text>
+    <line x1="512" y1="182" x2="688" y2="182" stroke="#2f3743" stroke-width="1.2"/>
+
+    <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12.5" fill="#9aa5b4">
+      <text x="512" y="208">chunk 1 ▸ running</text>
+      <text x="512" y="232">chunk 2 ▸ queued</text>
+      <text x="512" y="256">chunk 3 ▸ queued</text>
+    </g>
+    <g>
+      <circle cx="682" cy="203" r="4" fill="#3ddc84"/>
+      <circle cx="682" cy="227" r="4" fill="#4a5666"/>
+      <circle cx="682" cy="251" r="4" fill="#4a5666"/>
+    </g>
+
+    <text x="486" y="112" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" fill="#e6ebf2" font-weight="700" letter-spacing="0.2">Streams it</text>
+  </g>
+
+  <!-- ============ ARROW 2 ============ -->
+  <path d="M730 210 H786" stroke="#6b7684" stroke-width="2.2" marker-end="url(#c2b-arrow)"/>
+  <text x="758" y="196" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.5" fill="#8a94a3">bpy</text>
+
+  <!-- ============ RIGHT: Blender viewport + sofa ============ -->
+  <g>
+    <rect x="802" y="82" width="352" height="256" rx="12" fill="#1b1f27" stroke="#2f3743" stroke-width="1.5"/>
+    <rect x="802" y="82" width="352" height="26" rx="12" fill="#232935"/>
+    <rect x="802" y="96" width="352" height="12" fill="#232935"/>
+    <text x="818" y="100" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" fill="#8a94a3">viewport · object mode</text>
+
+    <!-- sofa, drawn in 3/4 view so it reads as furniture and not a brick -->
+    <g transform="translate(978 236) scale(1.02)">
+      <!-- soft shadow -->
+      <ellipse cx="4" cy="54" rx="92" ry="9" fill="#0d1015" opacity="0.55"/>
+      <!-- back slab -->
+      <path d="M-78 -30 L62 -30 L86 -14 L86 14 L-54 14 L-78 -2 Z"
+            fill="#4e5866" stroke="url(#c2b-acc)" stroke-width="2.1" stroke-linejoin="round"/>
+      <!-- back cushions (three seats) -->
+      <path d="M-50 -22 L-16 -22 L-6 -12 L-6 6 L-40 6 L-50 -4 Z"
+            fill="#69737f" stroke="url(#c2b-acc)" stroke-width="1.9" stroke-linejoin="round"/>
+      <path d="M-12 -22 L22 -22 L32 -12 L32 6 L-2 6 L-12 -4 Z"
+            fill="#727d8a" stroke="url(#c2b-acc)" stroke-width="1.9" stroke-linejoin="round"/>
+      <path d="M26 -22 L60 -22 L70 -12 L70 6 L36 6 L26 -4 Z"
+            fill="#69737f" stroke="url(#c2b-acc)" stroke-width="1.9" stroke-linejoin="round"/>
+      <!-- seat block -->
+      <path d="M-78 6 L86 6 L86 20 L-54 20 L-78 6 Z"
+            fill="#5c6673" stroke="url(#c2b-acc)" stroke-width="2.1" stroke-linejoin="round"/>
+      <!-- left arm (raised, gives the sofa its silhouette) -->
+      <path d="M-78 -30 L-96 -22 L-96 20 L-78 20 L-78 -2 Z"
+            fill="#454f5c" stroke="url(#c2b-acc)" stroke-width="2.1" stroke-linejoin="round"/>
+      <!-- right arm -->
+      <path d="M86 -14 L104 -6 L104 20 L86 20 Z"
+            fill="#454f5c" stroke="url(#c2b-acc)" stroke-width="2.1" stroke-linejoin="round"/>
+      <!-- legs -->
+      <path d="M-70 20 L-70 34 M78 20 L78 34"
+            stroke="#ff9d3c" stroke-width="3.2" stroke-linecap="round"/>
+    </g>
+
+    <text x="818" y="322" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.5" fill="#4ade80">✓ 14 objects · 6 chunks</text>
+
+    <text x="802" y="72" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" fill="#e6ebf2" font-weight="700" letter-spacing="0.2">Watch it build</text>
+  </g>
+
+  <!-- footer tagline -->
+  <text x="600" y="396" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" fill="#8a94a3" letter-spacing="0.3">
+    ChatGPT writes the Blender code · Chat2Blend runs the finished chunks the moment they arrive
+  </text>
+</svg>

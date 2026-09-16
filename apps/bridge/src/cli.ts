@@ -61,29 +61,58 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Absolute path of the bundled Blender add-on package directory
+ * (the folder that contains `__init__.py`). This resolves correctly both from
+ * a source checkout and from a global npm install, and is what a user must
+ * point Blender at — so we print it instead of a relative path that only
+ * makes sense inside the repository.
+ */
+function addonSourceDir(): string | undefined {
+  // dist/apps/bridge/src/cli.js -> package root is three levels up from `src`.
+  const candidates = [
+    path.resolve(__dirname, "..", "..", "..", "..", "blender_addon", "chat2blend"),
+    path.resolve(__dirname, "..", "..", "..", "blender_addon", "chat2blend"),
+  ];
+  return candidates.find((p) => fs.existsSync(path.join(p, "__init__.py")));
+}
+
+/** The installable zip, if it was produced by `npm run package:blender`. */
+function addonZip(): string | undefined {
+  const p = path.resolve(__dirname, "..", "..", "..", "..", "dist", "chat2blend-blender.zip");
+  return fs.existsSync(p) ? p : undefined;
+}
+
 function usage(): void {
-  line(`Chat2Blend v${VERSION} - use your LLM subscription as the 3D brain, let Blender execute.
+  line(`Chat2Blend v${VERSION} - describe a model, watch Blender build it.
 `);
   line(`Usage: c2b <command> [options]
 `);
-  line(`Commands:`);
-  line(`  version          Print the Chat2Blend version`);
+  line(`Start here:`);
+  line(`  setup            First-run checklist with the exact paths for your install`);
+  line(`  status           Bridge / Blender / brain status`);
+  line(`  doctor           Diagnose the local installation`);
+  line("");
+  line(`Make something:`);
+  line(`  brain <task>     Send a modelling task to the local ChatGPT desktop app`);
+  line(`  brain-attach     Attach to (or launch) the ChatGPT desktop app`);
+  line(`  brain-status [id]  Brain health, or compact job status`);
+  line(`  exec <file.py>   Send a Python file straight into Blender`);
+  line(`  prompt <task>    Print the modelling prompt for a task`);
+  line("");
+  line(`Bridge:`);
   line(`  start            Start the local bridge (loopback only)`);
   line(`  stop             Stop the bridge`);
-  line(`  status           Show bridge / blender / extension status`);
-  line(`  doctor           Diagnose the local installation`);
-  line(`  pair             Print a fresh pairing code for the browser extension`);
   line(`  jobs             List recent jobs`);
-  line(`  exec <file.py>   Send a python file straight into Blender`);
-  line(`  prompt <task>    Print the Chat2Blend modelling prompt for a task`);
-  line(`  brain <task>     [LOCAL BRAIN] Send a modelling task to the local ChatGPT desktop app`);
-  line(`  brain-attach     [LOCAL BRAIN] Attach to (or launch) the ChatGPT desktop app`);
-  line(`  brain-status [id]  [LOCAL BRAIN] Brain health, or compact job status`);
-  line(`  harness <task>   [AGENT] Submit a modelling task, auto-deliver to the web LLM, poll status`);
-  line(`  harness-status <jobId>   [AGENT] Compact job status (chunk names/states only)`);
-  line(`  blender status   Show Blender discovery + connection`);
   line(`  logs             Tail the bridge log`);
-  line(`  setup            Guided first-run checklist`);
+  line(`  version          Print version, protocol and runtime`);
+  line("");
+  line(`Agents:`);
+  line(`  harness <task>   Submit a modelling task and poll status`);
+  line(`  harness-status <jobId>   Compact job status (chunk names/states only)`);
+  line("");
+  line(`Legacy (browser extension, deprecated - the local ChatGPT desktop brain is the supported path):`);
+  line(`  pair             Print a fresh pairing code for the browser extension`);
   line("");
 }
 
@@ -358,6 +387,31 @@ async function main(): Promise<void> {
         process.exitCode = 1;
         return;
       }
+
+      // Preflight: a first-time user hitting a raw error here has no idea which
+      // of the three moving parts (bridge / Blender / ChatGPT) is missing.
+      if (!isRunning(STATE_DIR)) {
+        line(`${C.no}The bridge is not running.`);
+        line(`${C.info}Start it first:  c2b start`);
+        line(`${C.info}Then check:      c2b status`);
+        process.exitCode = 1;
+        return;
+      }
+      try {
+        const pre = await api<BridgeStatus>("/api/status");
+        if (!pre.blender.connected) {
+          line(`${C.no}Blender is not connected.`);
+          line(`${C.info}Open Blender, enable the Chat2Blend add-on, then click "Connect" in its N-panel.`);
+          line(`${C.info}Verify with:  c2b status`);
+          process.exitCode = 1;
+          return;
+        }
+      } catch (err) {
+        line(`${C.no}Could not reach the bridge: ${(err as Error).message}`);
+        process.exitCode = 1;
+        return;
+      }
+
       const created = await api<{ jobId: string; provider: string }>("/api/brain/tasks", {
         method: "POST",
         body: JSON.stringify({ task }),
@@ -450,12 +504,26 @@ async function main(): Promise<void> {
       await doctor();
       line("");
       line("Next steps:");
-      line("  1. Blender: Edit > Preferences > Add-ons > Install... > dist/chat2blend-blender.zip");
-      line("     (or, for development: copy blender_addon/chat2blend into Blender's scripts/addons folder)");
-      line("  2. Enable 'Chat2Blend' and click Connect in the N-panel (Chat2Blend tab)");
-      line("  3. Chrome/Edge: chrome://extensions > Developer mode > Load unpacked > apps/extension");
-      line("  4. Run `c2b pair` and paste the 6-digit code into the extension popup");
-      line("  5. Open ChatGPT, paste the prompt from `c2b prompt \"a modern sofa\"`, turn Auto Execute ON");
+
+      const addon = addonSourceDir();
+      const zip = addonZip();
+      if (zip) {
+        line(`  1. Blender: Edit > Preferences > Add-ons > Install... and choose:`);
+        line(`       ${zip}`);
+      } else if (addon) {
+        line(`  1. Blender: Edit > Preferences > Add-ons > Install... and choose:`);
+        line(`       ${path.join(addon, "__init__.py")}`);
+        line(`     (there is no .zip in this install - selecting __init__.py is enough)`);
+      } else {
+        line(`  1. Blender: install the bundled add-on`);
+        line(`       (add-on source not found - reinstall with: npm i -g chat2blend)`);
+      }
+      line(`  2. In the Chat2Blend N-panel (Blender's side bar), click "Connect".`);
+      line(`  3. Start the bridge:      c2b start`);
+      line(`  4. Attach ChatGPT:        c2b brain-attach`);
+      line(`  5. Build something:       c2b brain "a low-poly wooden side table" --wait`);
+      line("");
+      line(`  Check everything at any time with: c2b status`);
       return;
     }
 
@@ -497,15 +565,14 @@ async function doctor(): Promise<void> {
   const addonPaths = blenderAddonsPaths();
   line(`${addonPaths.length ? C.ok : C.wait}Blender add-on folders: ${addonPaths.length ? addonPaths.join(", ") : "none detected (install Blender once, or install the add-on manually)"}`);
 
-  // The browser extension is deprecated and not shipped in the npm package,
-  // so a missing build is informational, never an error.
-  const extDist = path.resolve(__dirname, "..", "..", "..", "extension", "dist", "manifest.json");
-  line(
-    `${C.info}Browser extension (deprecated): ${fs.existsSync(extDist) ? "build present at apps/extension/dist" : "not built - not required, the local ChatGPT desktop brain is the supported path"}`,
-  );
-
-  const addonSrc = path.resolve(__dirname, "..", "..", "..", "..", "blender_addon", "chat2blend", "__init__.py");
-  line(`${fs.existsSync(addonSrc) ? C.ok : C.no}Blender add-on source ${fs.existsSync(addonSrc) ? "present" : "missing"}`);
+  // Where the add-on lives in *this* install — the path the user must pick in
+  // Blender's "Install from Disk" dialog. Resolves for npm installs and checkouts.
+  const addon = addonSourceDir();
+  if (addon) {
+    line(`${C.ok}Blender add-on ready at ${path.join(addon, "__init__.py")}`);
+  } else {
+    line(`${C.no}Blender add-on source missing - reinstall: npm i -g chat2blend`);
+  }
 
   // Local brain (ChatGPT desktop app)
   const exe = findChatGptExe();

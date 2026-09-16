@@ -22,6 +22,10 @@ dist/**/*.test.js
 dist/**/*.test.d.ts
 dist/apps/extension/
 
+# README images — they are for the GitHub page and would only bloat the tarball
+docs/assets/
+docs/demo-cube.png
+
 # dev-only config
 .npm-cache/
 .npmrc

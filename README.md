@@ -1,229 +1,316 @@
+<div align="center">
+
+<img src="docs/assets/hero.svg" alt="Describe it. Watch Blender build it." width="100%">
+
 # Chat2Blend
+
+### Describe it. Watch Blender build it.
+
+**Turn ChatGPT into a live 3D modelling partner for Blender.**
+
+No copy/paste. No OpenAI API key. No second coding agent.
+
+```bash
+npm install -g chat2blend
+```
+
+[Get started](#-quick-start-3-minutes) · [How it feels](#what-does-it-feel-like) · [How it works](#how-it-works) · [中文](README.zh-CN.md)
 
 [![CI](https://github.com/nanhudev/chat2blend/actions/workflows/ci.yml/badge.svg)](https://github.com/nanhudev/chat2blend/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/chat2blend.svg)](https://www.npmjs.com/package/chat2blend)
 [![npm downloads](https://img.shields.io/npm/dm/chat2blend.svg)](https://www.npmjs.com/package/chat2blend)
 [![license: MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 [![node](https://img.shields.io/node/v/chat2blend.svg)](https://nodejs.org)
-[![zero runtime deps](https://img.shields.io/badge/runtime%20deps-0-brightgreen.svg)](./package.json)
 
-> **Use your LLM subscription as the 3D brain. Let Blender execute.**
+</div>
 
-Chat2Blend (C2B) turns the *local ChatGPT desktop app* into a Blender Python generator and executes the output inside a visible, already-open Blender instance — no copy/paste, no API key, no browser extension, no second coding agent burning tokens.
+---
 
-```
-User
- ↓
-Local ChatGPT Desktop App (your existing login/session)
- ↓  CDP on 127.0.0.1:9333
-Chat2Blend Local Brain
- ↓
-Local Bridge
- ↓
-Blender Add-on
- ↓
-Visible 3D model
+## What does it feel like?
+
+You type this into the Chat2Blend CLI:
+
+```bash
+c2b brain "a modern three-seat fabric sofa" --wait
 ```
 
-> A browser-extension path (legacy) is still present but deprecated; see below.
+ChatGPT writes the Blender Python. Chat2Blend runs each finished chunk in Blender
+**while the rest is still being generated**. You sit back and watch the sofa
+appear — arm by arm, cushion by cushion.
 
-## Why it exists
+```
+You
+ │  "a modern three-seat fabric sofa"
+ ▼
+ChatGPT  ─────  writes Blender Python
+ │
+ ▼
+Chat2Blend  ───  streams finished chunks
+ │
+ ▼
+Blender  ──────  executes them live
+ │
+ ▼
+🛋  a sofa in your scene
+```
 
-You already pay for ChatGPT/Claude/Gemini. Coding agents (Codex, Cursor, etc.) should not spend tokens rewriting the same `bpy` code. Chat2Blend is a **transport and execution layer**, not a model. It makes the LLM you already have generate geometry, then gets that geometry into Blender in real time.
+Below is a **real, unedited screenshot** — a genuine Blender GUI run, with 6
+streaming chunks creating 14 objects.
 
-- **No OpenAI API key.** Uses the ChatGPT desktop app that is already logged in.
-- **No browser extension.** Drives the app directly over its local debugging port.
-- **No coding-agent token waste.** Agents just say "use Chat2Blend".
-- **Streaming execution.** The first chunk runs in Blender while later chunks are still being generated.
-- **Local-first.** Loopback only. No tunnels, no cloud, no SaaS.
+<div align="center">
+<img src="docs/assets/demo-sofa.png" alt="A three-seat fabric sofa built live inside Blender" width="100%">
+</div>
 
-## Status
+<sub>Real output of <code>a modern three-seat fabric sofa with rounded cushions</code>, streamed into a visible Blender 4.2.9. The outliner on the right lists the 14 <code>C2B_*</code> objects Chat2Blend created — <code>Arm_L/R</code>, <code>Back_1..3</code>, <code>Seat_1..3</code>, <code>Leg_1..4</code>, <code>Frame_Base/Back</code>. This run used synthetic chunks (<code>scripts/e2e-blender.mjs</code>) to isolate the Blender execution path.</sub>
 
-Windows: **tested** (Blender 4.2.9, local ChatGPT desktop app via CDP)
-macOS: architecture supported / experimental  
-Linux: architecture supported / experimental
+<sub>For the full round trip through a **real ChatGPT session**, see the numbers in <a href="docs/PROJECT_STATUS.md">docs/PROJECT_STATUS.md</a>: <code>"a low-poly wooden side table"</code> → 8 chunks, 38 objects, first geometry visible in 38.6s.</sub>
 
-Core loop is real and verified: `natural language → local ChatGPT desktop app → Bridge → Blender GUI → 3D model`.
+---
 
-## Quick start
+## Why?
 
-### 1. Requirements
+Generating Blender Python with an LLM already works. **The annoying part is everything around it.**
 
-- Windows 10/11, macOS, or Linux
-- Node.js ≥ 20
-- Blender 4.x
-- ChatGPT desktop app (Windows MSIX store install) — logged in
+Normally you:
 
-### 2. Install
+1. Ask ChatGPT for `bpy` code
+2. Wait for the entire answer
+3. Copy the code
+4. Open Blender
+5. Paste it into the script editor
+6. Run it
+7. Hit an error
+8. Go back to ChatGPT
+9. Repeat
 
-**Option A — npm (recommended)**
+Chat2Blend removes the middle.
+
+You describe the asset. ChatGPT writes the Blender code. **Completed chunks run in Blender the moment they arrive**, so you see progress instead of waiting for a wall of text.
+
+- **No copy/paste.** The code never touches your clipboard.
+- **No API billing.** It uses the ChatGPT desktop app you already pay for.
+- **No second agent.** Your coding agent doesn't burn tokens rewriting `bpy`.
+- **Visible execution.** Everything happens in the Blender window in front of you.
+- **Local-first.** Loopback only. No tunnels, no cloud, no telemetry.
+
+---
+
+## ⚡ Quick start (3 minutes)
+
+### 1. Install
 
 ```bash
 npm install -g chat2blend
-c2b version
 ```
 
-The npm package ships the `c2b` CLI, the compiled bridge, the Blender add-on
-(`blender_addon/chat2blend/`) and the Agent Skill. There are **zero runtime
-dependencies**.
+Requires **Node.js ≥ 20** and **Blender 4.x**.
 
-**Option B — from source**
+### 2. Run setup
+
+```bash
+c2b setup
+```
+
+This checks your machine and prints the **exact** next steps for *your* install —
+including the absolute path of the Blender add-on you need to pick.
+
+### 3. Install the Blender add-on
+
+In Blender: `Edit ▸ Preferences ▸ Add-ons ▸ Install…`
+
+Choose the path printed by `c2b setup` (it ends in `blender_addon/chat2blend/__init__.py`).
+
+Then enable **Chat2Blend** and click **Connect** in the Chat2Blend tab of Blender's side bar (`N`).
+
+### 4. Start the bridge and attach ChatGPT
+
+```bash
+c2b start          # starts the local bridge
+c2b brain-attach   # finds (or launches) the ChatGPT desktop app
+```
+
+The ChatGPT desktop app must be installed and logged in — `c2b doctor` will tell you.
+
+### 5. Build something
+
+```bash
+c2b brain "a low-poly wooden side table" --wait
+```
+
+Watch your Blender window. That's it.
+
+> **Stuck?** Run `c2b status` at any point. It reports whether the bridge, Blender
+> and the ChatGPT app are each ready, and tells you what to do about the one
+> that isn't.
+
+---
+
+## Examples
+
+```bash
+c2b brain "a low-poly wooden side table" --wait
+c2b brain "a modern three-seat fabric sofa" --wait
+c2b brain "a stack of three ceramic coffee mugs" --wait
+c2b brain "a mid-century modern armchair" --wait
+```
+
+Don't want to wait for it? Drop `--wait` and poll instead:
+
+```bash
+c2b brain "a wooden bookshelf with 4 shelves"
+c2b brain-status <jobId>
+```
+
+Other ways in:
+
+```bash
+c2b exec examples/cube.py     # send a Python file straight into Blender
+c2b prompt "a modern sofa"    # print the modelling prompt Chat2Blend uses
+c2b jobs                      # list recent jobs
+c2b logs                      # tail the bridge log
+```
+
+---
+
+## How it works
+
+```
+ChatGPT Desktop App  (your login, no API key)
+      │  CDP on 127.0.0.1:9333
+      ▼
+Local Brain  ── finds the window, fills the composer, reads the code blocks
+      │  HTTP on 127.0.0.1:8787
+      ▼
+Bridge  ── jobs, queue, auth, logs
+      │  line-delimited JSON over TCP on 127.0.0.1:8788
+      ▼
+Blender Add-on  ── executes on the main thread, shared namespace
+      ▼
+Blender Scene
+```
+
+**The local brain** is zero-dependency TypeScript that talks to the ChatGPT desktop
+app over the Chrome DevTools Protocol. It fills the composer, waits for the answer,
+and extracts Python code blocks from the rendered conversation. No browser
+extension, no scraped DOM, no third-party cookies.
+
+**The bridge** is zero-dependency Node.js — `/api/*` routes plus a
+line-delimited JSON socket to Blender.
+
+**The Blender add-on** is pure Python stdlib + `bpy`. Networking runs on a
+background thread; execution is drained on the main thread via `bpy.app.timers`,
+which is why your Blender window stays responsive and *visible*.
+
+<details>
+<summary><b>The C2B chunk protocol</b></summary>
+
+To get streaming execution, the LLM wraps its output in chunk markers:
+
+```python
+# C2B:CHUNK arm_left
+...python...
+# C2B:END
+```
+
+Rules: Blender 4.x `bpy` API; helpers defined before use; earlier chunks cannot
+depend on later chunks; every chunk is a standalone valid Python block.
+
+If the model doesn't follow the protocol, Chat2Blend falls back to executing
+complete ` ```python ` fences after generation ends.
+
+See [`docs/PROTOCOL.md`](docs/PROTOCOL.md) and [`docs/STREAMING.md`](docs/STREAMING.md).
+</details>
+
+---
+
+## Agent integration
+
+Coding agents should **not** generate large `bpy` scripts when Chat2Blend is available.
+
+```text
+Use Chat2Blend to generate the Blender asset. Run `c2b status` first; if Blender is
+not connected, tell the user to open Blender and enable the add-on. Then run
+`c2b brain "<asset description>" --wait` and report the resulting job status.
+```
+
+The agent never writes or sees the generated `bpy` code — it only receives compact
+chunk status, object counts and time-to-first-frame.
+
+See [`skill/SKILL.md`](skill/SKILL.md) and [`docs/AGENT_INTEGRATION.md`](docs/AGENT_INTEGRATION.md).
+
+---
+
+## Current support
+
+| Platform | Status |
+|---|---|
+| **Windows 10/11** | ✅ Tested end-to-end (Blender 4.2.9 + ChatGPT desktop app) |
+| **macOS** | 🧪 Architecture supported, not yet verified on real hardware |
+| **Linux** | 🧪 Architecture supported, not yet verified on real hardware |
+
+The core loop is real and verified: `natural language → ChatGPT desktop app → bridge → Blender GUI → 3D model`.
+
+---
+
+## Security
+
+Chat2Blend executes LLM-generated Python inside Blender. That is inherently powerful, so:
+
+- The bridge binds **`127.0.0.1` only**. Binding `0.0.0.0` is refused.
+- The local brain only connects to the ChatGPT desktop app on *this* machine.
+- Web origins outside `http://127.0.0.1` / `http://localhost` are rejected.
+- **We never ask for ChatGPT credentials, OpenAI API keys, or browser cookies.**
+
+Read the full threat model in [`docs/SECURITY.md`](docs/SECURITY.md).
+To report a vulnerability, see [`SECURITY.md`](./SECURITY.md).
+
+---
+
+## Development
 
 ```bash
 git clone https://github.com/nanhudev/chat2blend.git
 cd chat2blend
 npm install
-npm run build
-```
-
-### 3. Install the Blender add-on
-
-**From source** — build the zip:
-
-```bash
+npm run build          # TypeScript + extension
+npm run typecheck
+npm test               # parser + bridge integration tests
 npm run package:blender
 ```
 
-Open Blender → `Edit > Preferences > Add-ons > Install...` → choose `dist/chat2blend-blender.zip` → enable **Chat2Blend**. The add-on auto-connects to the local bridge.
+### End-to-end verification
 
-**From npm** — the add-on source ships with the package, so just point Blender at it:
-
-```bash
-c2b doctor          # prints the resolved add-on source path
-```
-
-Then `Edit > Preferences > Add-ons > Install...` → pick
-`<global node_modules>/chat2blend/blender_addon/chat2blend/__init__.py`
-(or zip the folder yourself). Enabling **Chat2Blend** is enough — it
-auto-connects to the local bridge.
-
-### 4. Start the bridge
+A real GUI test that drives the ChatGPT desktop app:
 
 ```bash
-c2b start           # npm install
-# from source instead:
-npm run c2b -- start
+node scripts/e2e-brain.mjs "a low-poly wooden side table"
 ```
 
-This starts a loopback-only HTTP server on `127.0.0.1:8787` and a TCP transport on `127.0.0.1:8788`.
+It starts a bridge, opens the Blender GUI, connects the add-on, drives the local
+ChatGPT app, waits for the generated chunks and checks that the model appears in
+the scene. Requires a logged-in ChatGPT desktop app.
 
-### 5. Attach the local ChatGPT brain
-
-Make sure the ChatGPT desktop app is running and logged in.
+A synthetic, no-LLM variant that streams chunks from disk:
 
 ```bash
-npm run c2b -- brain-attach
+node scripts/e2e-blender.mjs examples/sofa_chunks.py 1200
 ```
 
-The bridge finds the app, attaches to its local debugging port (default `127.0.0.1:9333`), and verifies the composer is ready.
+There is a hard rule in this project: **no fake success.** See
+[`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
-### 6. Ask ChatGPT (local)
+---
 
-```bash
-c2b brain "a low-poly wooden side table"
-c2b brain "..." --wait
-# from source: npm run c2b -- brain "..."
-```
+## Roadmap
 
-Watch Blender build the model while the local ChatGPT app generates it.
+- Multi-provider adapters (Claude, Gemini, DeepSeek, Grok, local LLMs)
+- Manual edit / retry / skip of individual chunks
+- Headless mode for CI
+- Godot export pipeline
 
-> **Legacy browser-extension path:** the extension code is still present in `apps/extension` but is no longer the recommended flow. Use it only if you cannot install the ChatGPT desktop app.
+See [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
-## CLI
-
-```bash
-c2b <command>               # installed from npm
-npm run c2b -- <command>    # running from a source checkout
-```
-
-| Command | Purpose |
-|---------|---------|
-| `version` | Print version, protocol and runtime |
-| `start` | Start the bridge daemon |
-| `stop` | Stop the bridge |
-| `status` | Bridge / Blender / extension status |
-| `doctor` | Full diagnostics |
-| `pair` | Show a fresh pairing code (legacy extension) |
-| `jobs` | List recent jobs |
-| `exec <file.py>` | Send a Python file straight into Blender |
-| `prompt "task"` | Print the Chat2Blend prompt template |
-| `brain "task"` | Submit a task to the local ChatGPT desktop app |
-| `brain-attach` | Attach to / launch the local ChatGPT app |
-| `brain-status [id]` | Brain health or compact job status |
-| `harness "task"` | Agent-facing submit (legacy web path) |
-| `logs` | Tail the bridge log |
-| `setup` | Guided first-run checklist |
-
-## Demo
-
-A real GUI run: the bridge starts, the Blender add-on connects, and `examples/cube.py` is streamed into the visible Blender window. The C2B_Cube object appears without any copy/paste.
-
-![Chat2Blend executing a cube in Blender GUI](docs/demo-cube.png)
-
-## Architecture
-
-```
-ChatGPT Desktop App
-    ↓  CDP on 127.0.0.1:9333
-Local Brain (finds the window, fills the composer, reads the code blocks)
-    ↓  localhost:8787 HTTP + token
-Local Bridge (jobs, queue, auth, logs)
-    ↓  localhost:8788 line-delimited JSON TCP
-Blender Add-on (main-thread executor, shared namespace)
-    ↓
-Blender Scene
-```
-
-- **Local brain** is zero-runtime-dependency TypeScript that talks to the local ChatGPT desktop app via Chrome DevTools Protocol. It fills the composer, waits for the answer, and extracts Python code blocks (with C2B markers) from the rendered conversation. No browser extension, no scraped DOM, no third-party cookies.
-- **Bridge** is zero-runtime-dependency Node.js. It exposes `/api/*` routes and a line-delimited JSON socket to Blender.
-- **Blender add-on** is pure Python stdlib + `bpy`. Network runs in a background thread; execution is drained on the main thread via `bpy.app.timers`.
-
-Read more in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
-
-## The C2B Protocol (v1)
-
-To get streaming execution, ask the LLM to wrap chunks in:
-
-```python
-# C2B:CHUNK <name>
-...python...
-# C2B:END
-```
-
-Rules:
-
-- `bpy`, Blender 4.x API
-- define helpers before use
-- earlier chunks cannot depend on later chunks
-- every chunk must be a standalone valid Python block
-
-If the LLM does not follow the protocol, Chat2Blend falls back to executing complete ` ```python ` fences after generation ends.
-
-Read more in [`docs/PROTOCOL.md`](docs/PROTOCOL.md) and [`docs/STREAMING.md`](docs/STREAMING.md).
-
-## Agent integration
-
-Coding agents should **not** generate large `bpy` scripts when Chat2Blend is available. Instead:
-
-```text
-Use Chat2Blend to generate the Blender asset. Run `c2b status` first; if Blender is not connected, tell the user to open Blender and enable the add-on. Then run `c2b brain "<asset description>" --wait` and poll the returned job status.
-```
-
-The harness (agent) never writes or sees the generated `bpy` code — it only receives compact chunk status, object counts, and TTFF.
-
-See [`skill/SKILL.md`](skill/SKILL.md) and [`docs/AGENT_INTEGRATION.md`](docs/AGENT_INTEGRATION.md).
-
-## Security
-
-Chat2Blend executes LLM-generated Python in Blender. That is inherently powerful.
-
-- Bridge binds **127.0.0.1 only**. `0.0.0.0` is not allowed.
-- The local brain only connects to the ChatGPT desktop app running on this machine.
-- Web origins outside `http://127.0.0.1` / `http://localhost` are rejected.
-- We never ask for ChatGPT credentials, OpenAI API keys, or browser cookies.
-
-Read more in [`docs/SECURITY.md`](docs/SECURITY.md). To report a vulnerability,
-see [`SECURITY.md`](./SECURITY.md).
+---
 
 ## Documentation
 
@@ -234,54 +321,18 @@ see [`SECURITY.md`](./SECURITY.md).
 | [`docs/STREAMING.md`](docs/STREAMING.md) | Streaming parser and dedupe |
 | [`docs/AGENT_INTEGRATION.md`](docs/AGENT_INTEGRATION.md) | Using Chat2Blend from a coding agent |
 | [`docs/SECURITY.md`](docs/SECURITY.md) | Threat model |
-| [`docs/ROADMAP.md`](docs/ROADMAP.md) | What is next |
-| [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) | What is verified vs. experimental |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | What's next |
+| [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) | Verified vs. experimental |
 | [`CHANGELOG.md`](CHANGELOG.md) | Release history |
+
+---
 
 ## Contributing
 
-Bug reports, ideas and PRs are welcome. Start with
-[`CONTRIBUTING.md`](./CONTRIBUTING.md) — it covers the dev environment, the
-layout, the "no fake success" rule and the零-runtime-dependency policy. Please
-also read the [Code of Conduct](./CODE_OF_CONDUCT.md).
+Bug reports, ideas and PRs are welcome — start with [`CONTRIBUTING.md`](./CONTRIBUTING.md).
+Please also read the [Code of Conduct](./CODE_OF_CONDUCT.md).
 
-## Development
-
-```bash
-npm run build        # TypeScript + extension
-npm run typecheck    # TypeScript only
-npm run test         # Parser + bridge integration tests
-npm run build:extension
-npm run package:blender
-```
-
-### End-to-end verification
-
-The repo includes a real GUI E2E test for the local-brain path:
-
-```bash
-node scripts/e2e-brain.mjs "a low-poly wooden side table"
-```
-
-This starts a bridge, opens Blender GUI, connects the add-on, drives the local ChatGPT desktop app, waits for the generated C2B chunks, and checks that the model appears in the scene. It requires the ChatGPT desktop app to be installed and logged in.
-
-There is also a synthetic, no-LLM test that streams chunks from disk:
-
-```bash
-node scripts/e2e-blender.mjs examples/sofa_chunks.py 1200
-```
-
-This starts a bridge, opens Blender GUI, connects the add-on, streams C2B chunks from the example file, and checks that the model appears in the scene. It does not require a real ChatGPT session.
-
-## Roadmap
-
-- Multi-provider adapters (Claude Web, Gemini Web, DeepSeek, Grok, local LLMs)
-- Manual code editing / retry / skip in UI
-- Headless mode for CI
-- Godot export pipeline
-- Team features / cloud collaboration (not in core)
-
-See [`docs/ROADMAP.md`](docs/ROADMAP.md).
+---
 
 ## License
 
@@ -289,5 +340,5 @@ MIT © Chat2Blend contributors
 
 Chat2Blend is an independent open-source project. It is **not** affiliated with,
 endorsed by, or supported by OpenAI or the Blender Foundation. "ChatGPT" is a
-trademark of OpenAI; "Blender" is a trademark of the Blender Foundation. You
-must comply with the terms of any chat subscription you use this with.
+trademark of OpenAI; "Blender" is a trademark of the Blender Foundation. You must
+comply with the terms of any chat subscription you use this with.

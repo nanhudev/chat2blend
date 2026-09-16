@@ -1,7 +1,7 @@
 # Chat2Blend Project Status
 
 Milestone: **v0.2.0 — local ChatGPT desktop brain**
-Date: 2026-09-16
+Date: 2026-09-17
 
 This is a working-status snapshot, not a guarantee. Everything below marked
 "verified" was actually executed on the reference machine; everything else says
@@ -37,7 +37,8 @@ desktop app (MSIX):
 | HARNESS | implemented + E2E verified | legacy agent path over the web LLM |
 | EXTENSION | **deprecated, kept** | see `apps/extension/DEPRECATED.md` |
 | CLI | done | start/stop/status/doctor/version/brain/brain-attach/brain-status/… |
-| NPM | published | `npm i -g chat2blend`, ships the `c2b` binary |
+| CLI UX | done (2026-09-17) | `setup` prints the real absolute add-on path for both npm and source installs; `doctor` reports a ready-to-pick path; `brain` preflights bridge + Blender and guides instead of erroring |
+| NPM | published | `npm i -g chat2blend`, ships the `c2b` binary; tarball is 69 kB (README images excluded) |
 | WINDOWS | tested | real Blender GUI + real ChatGPT desktop app E2E passed |
 | MACOS | architecture supported, not manually tested | paths use `os.homedir` / `path.join` |
 | LINUX | architecture supported, not manually tested | common Blender paths included |

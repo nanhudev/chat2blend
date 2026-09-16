@@ -35,7 +35,10 @@ Use when the user asks for:
 
    Look at `c2b status` output. If `Blender: not connected`, tell the user:
 
-   > Open Blender, Edit > Preferences > Add-ons > Install, choose `dist/chat2blend-blender.zip`, enable Chat2Blend, then click Connect in the N-panel.
+   > Run `c2b setup` — it prints the exact absolute path of the add-on for this
+   > install. Then in Blender: Edit > Preferences > Add-ons > Install, choose that
+   > `blender_addon/chat2blend/__init__.py`, enable Chat2Blend, and click Connect
+   > in the Chat2Blend N-panel.
 
 4. **Attach the local brain** — only once per session
 
@@ -80,6 +83,7 @@ Copy the printed prompt into ChatGPT yourself.
 
 ## Commands to remember
 
+- `c2b setup` — first-run checklist; prints the exact add-on path for this install
 - `c2b status` — system status
 - `c2b start` / `c2b stop` — bridge control
 - `c2b doctor` — diagnostics
@@ -97,10 +101,12 @@ Copy the printed prompt into ChatGPT yourself.
 - Do not write long `bpy` scripts yourself.
 - Do not parse or rewrite the Python coming from ChatGPT.
 - Do not ask for the OpenAI API key.
+- `c2b brain` preflights the bridge and Blender and exits non-zero with guidance
+  if either is missing — surface that guidance to the user instead of retrying blindly.
 - If something fails, run `c2b doctor` and report the output.
 
 ## Files
 
 - `apps/bridge/src/brain` — local ChatGPT desktop app driver
-- `dist/chat2blend-blender.zip` — Blender add-on package
+- `blender_addon/chat2blend/` — Blender add-on package (path printed by `c2b setup`)
 - `docs/AGENT_INTEGRATION.md` — full agent protocol
