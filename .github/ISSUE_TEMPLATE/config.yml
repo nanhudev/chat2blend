@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question or help
+    url: https://github.com/nanhudev/chat2blend/discussions
+    about: Ask how to use Chat2Blend, or share what you built with it.
+  - name: Security vulnerability
+    url: https://github.com/nanhudev/chat2blend/security/advisories/new
+    about: Please report security issues privately, not as a public issue.
+  - name: Documentation
+    url: https://github.com/nanhudev/chat2blend/tree/main/docs
+    about: Architecture, protocol, streaming, security and agent integration notes.

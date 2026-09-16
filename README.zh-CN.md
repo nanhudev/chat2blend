@@ -44,9 +44,20 @@ Linux：架构支持 / 实验性
 - Windows 10/11、macOS 或 Linux
 - Node.js ≥ 20
 - Blender 4.x
-- Chrome 或 Edge
+- ChatGPT 桌面端（Windows 为 MSIX 商店版）— 已登录
 
 ### 2. 安装
+
+**方式 A — npm（推荐）**
+
+```bash
+npm install -g chat2blend
+c2b version
+```
+
+npm 包内含 `c2b` CLI、编译好的 bridge、Blender 插件源码和 Agent Skill，**零运行时依赖**。
+
+**方式 B — 源码**
 
 ```bash
 git clone https://github.com/nanhudev/chat2blend.git
@@ -63,57 +74,71 @@ npm run package:blender
 
 打开 Blender → `编辑 > 偏好设置 > 插件 > 安装...` → 选择 `dist/chat2blend-blender.zip` → 启用 **Chat2Blend**。插件会自动连接本地 bridge。
 
+npm 安装时，插件源码随包一起发布，直接指向它即可：
+
+```bash
+c2b doctor          # 会打印解析出的插件源码路径
+```
+
+然后 `编辑 > 偏好设置 > 插件 > 安装...` → 选择
+`<全局 node_modules>/chat2blend/blender_addon/chat2blend/__init__.py`。
+
 ### 4. 启动 Bridge
 
 ```bash
+c2b start           # npm 安装
+# 源码运行：
 npm run c2b -- start
-# 或构建后：
-node dist/apps/bridge/src/cli.js start
 ```
 
 这会启动仅监听 127.0.0.1 的 HTTP 服务（8787）和 TCP 传输（8788）。
 
-### 5. 安装浏览器扩展
+### 5. 挂接本地 ChatGPT 大脑
 
-1. 打开 Chrome/Edge → `chrome://extensions`
-2. 打开**开发者模式**
-3. **加载已解压的扩展程序** → 选择 `apps/extension/dist`
-4. 点击 Chat2Blend 图标，输入 `c2b pair` 显示的 6 位配对码
-5. 打开 **Auto Execute**
+确保 ChatGPT 桌面端已启动并登录。
 
-### 6. 问 ChatGPT
-
-点击扩展弹窗里的 **Copy Prompt**（或运行 `npm run c2b -- prompt "一个现代三人布艺沙发"`），把提示词贴到 ChatGPT，并确保助手按这种格式返回代码：
-
-```python
-# C2B:CHUNK setup
-import bpy
-...
-# C2B:END
-
-# C2B:CHUNK base
-...
-# C2B:END
+```bash
+c2b brain-attach
+# 源码运行：npm run c2b -- brain-attach
 ```
 
-然后看着 Blender 一边生成模型。
+bridge 会找到该应用，挂到它的本地调试端口（默认 `127.0.0.1:9333`），并确认输入框可用。
+
+### 6. 向本地 ChatGPT 提问
+
+```bash
+c2b brain "一个低多边形木质边桌"
+c2b brain "..." --wait
+# 源码运行：npm run c2b -- brain "..."
+```
+
+Blender 会在本地 ChatGPT 生成代码的同时把模型搭出来。
+
+> **旧版浏览器扩展路径：** `apps/extension` 里的扩展代码仍然保留，但已不再推荐，详见 `apps/extension/DEPRECATED.md`。只有在无法安装 ChatGPT 桌面端时才用它。
 
 ## CLI
 
 ```bash
-npm run c2b -- <命令>
+c2b <命令>               # npm 安装
+npm run c2b -- <命令>    # 源码运行
 ```
 
 | 命令 | 作用 |
 |------|------|
+| `version` | 打印版本、协议与运行时 |
 | `start` | 启动 bridge 守护进程 |
 | `stop` | 停止 bridge |
 | `status` | 查看 bridge / Blender / 扩展状态 |
 | `doctor` | 完整诊断 |
-| `pair` | 显示新的配对码 |
+| `pair` | 显示新的配对码（旧版扩展） |
 | `jobs` | 最近的任务 |
 | `exec <file.py>` | 直接把 Python 文件送进 Blender |
 | `prompt "任务"` | 打印 Chat2Blend 提示词模板 |
+| `brain "任务"` | 把任务交给本地 ChatGPT 桌面端 |
+| `brain-attach` | 挂接 / 启动本地 ChatGPT 应用 |
+| `brain-status [id]` | 大脑健康状态或精简任务状态 |
+| `logs` | 跟踪 bridge 日志 |
+| `setup` | 首次运行引导清单 |
 
 ## 演示
 
@@ -177,11 +202,27 @@ Use Chat2Blend to generate the Blender asset. First run `c2b status`; if Blender
 Chat2Blend 会执行 LLM 生成的 Python。这本身就是一把利剑。
 
 - Bridge 仅绑定 **127.0.0.1**，不允许 `0.0.0.0`。
-- 扩展必须先通过 6 位配对码配对，才能拿到 bridge token。
+- 本地大脑只连接本机运行的 ChatGPT 桌面端（CDP 端口仅监听回环）。
 - 非 `chrome-extension://` / `http://127.0.0.1` / `http://localhost` 来源会被拒绝。
 - 我们不索要 ChatGPT 账号、OpenAI API Key 或浏览器 Cookie。
 
-详见 [`docs/SECURITY.md`](docs/SECURITY.md)。
+详见 [`docs/SECURITY.md`](docs/SECURITY.md)。如需报告漏洞，请看 [`SECURITY.md`](./SECURITY.md)。
+
+## 文档
+
+| 文档 | 内容 |
+|------|------|
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | 逐组件设计说明 |
+| [`docs/PROTOCOL.md`](docs/PROTOCOL.md) | C2B/1 分块协议 |
+| [`docs/STREAMING.md`](docs/STREAMING.md) | 流式解析与去重 |
+| [`docs/AGENT_INTEGRATION.md`](docs/AGENT_INTEGRATION.md) | 在编码 Agent 中使用 |
+| [`docs/SECURITY.md`](docs/SECURITY.md) | 威胁模型 |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | 后续计划 |
+| [`CHANGELOG.md`](CHANGELOG.md) | 发布历史 |
+
+## 参与贡献
+
+欢迎提 issue、提想法、提 PR。请先读 [`CONTRIBUTING.md`](./CONTRIBUTING.md)（开发环境、目录结构、"不许假成功"原则、零运行时依赖策略）和 [行为准则](./CODE_OF_CONDUCT.md)。
 
 ## 开发
 
@@ -195,7 +236,15 @@ npm run package:blender
 
 ### 端到端验证
 
-仓库包含真实 GUI E2E 测试：
+仓库包含真实 GUI E2E 测试。
+
+本地大脑路径（需要 ChatGPT 桌面端已登录）：
+
+```bash
+node scripts/e2e-brain.mjs "一个低多边形木质边桌"
+```
+
+无需 LLM 的合成测试（从磁盘流式发送 chunk）：
 
 ```bash
 node scripts/e2e-blender.mjs examples/sofa_chunks.py 1200
@@ -212,6 +261,12 @@ node scripts/e2e-blender.mjs examples/sofa_chunks.py 1200
 - 团队 / 云端协作功能（不在核心中）
 
 详见 [`docs/ROADMAP.md`](docs/ROADMAP.md)。
+
+## License
+
+MIT © Chat2Blend contributors
+
+Chat2Blend 是独立开源项目，与 OpenAI、Blender 基金会**没有**隶属、背书或支持关系。"ChatGPT" 是 OpenAI 的商标，"Blender" 是 Blender 基金会的商标。使用时请遵守你所使用聊天订阅的服务条款。
 
 ## License
 

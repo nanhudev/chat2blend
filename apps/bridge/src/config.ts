@@ -3,10 +3,27 @@ import * as path from "node:path";
 import * as os from "node:os";
 import * as crypto from "node:crypto";
 
-export const VERSION = "0.1.0";
-
 export const DEFAULT_HTTP_PORT = 8787;
 export const DEFAULT_BLENDER_PORT = 8788;
+
+/**
+ * Single source of truth for the version is package.json, so the CLI, the HTTP
+ * API and the Blender handshake can never drift from the published version.
+ * Falls back to a literal when package.json is unavailable (e.g. bundled run).
+ */
+function readPackageVersion(): string {
+  try {
+    // dist/apps/bridge/src/config.js -> <package root>/package.json
+    const pkg = path.resolve(__dirname, "..", "..", "..", "..", "package.json");
+    const parsed = JSON.parse(fs.readFileSync(pkg, "utf8")) as { version?: string };
+    if (typeof parsed.version === "string" && parsed.version) return parsed.version;
+  } catch {
+    /* fall through */
+  }
+  return "0.2.0";
+}
+
+export const VERSION = readPackageVersion();
 
 /** Loopback only. Binding to 0.0.0.0 is never allowed in v1. */
 export const HOST = "127.0.0.1";

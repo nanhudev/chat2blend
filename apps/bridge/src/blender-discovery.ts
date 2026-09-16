@@ -33,7 +33,12 @@ export function discoverBlender(): BlenderInstall[] {
   // 1) PATH
   try {
     const cmd = process.platform === "win32" ? "where" : "which";
-    const out = execFileSync(cmd, ["blender"], { encoding: "utf8", timeout: 5000, windowsHide: true });
+    const out = execFileSync(cmd, ["blender"], {
+      encoding: "utf8",
+      timeout: 5000,
+      windowsHide: true,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
     out.split(/\r?\n/).map((s) => s.trim()).filter(Boolean).forEach((p) => add(p, "path"));
   } catch {
     /* not on PATH */
@@ -59,6 +64,14 @@ export function discoverBlender(): BlenderInstall[] {
       for (const dir of safeReaddir(root)) {
         if (/^blender-?\d/i.test(dir)) add(path.join(root, dir, "blender.exe"), "common");
       }
+    }
+    // Steam (very common, and invisible to Program Files / PATH discovery)
+    for (const root of steamRoots()) {
+      add(path.join(root, "steamapps", "common", "Blender", "blender.exe"), "steam");
+    }
+    // MSI / custom installs: only worth the registry walk if we found nothing
+    if (found.size === 0) {
+      for (const exe of registryBlenderExes()) add(exe, "common");
     }
   } else if (process.platform === "darwin") {
     add("/Applications/Blender.app/Contents/MacOS/Blender", "common");
@@ -86,6 +99,103 @@ function safeReaddir(dir: string): string[] {
   } catch {
     return [];
   }
+}
+
+function regValue(key: string, value: string): string | undefined {
+  try {
+    const out = execFileSync("reg", ["query", key, "/v", value], {
+      encoding: "utf8",
+      timeout: 5000,
+      windowsHide: true,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    const m = new RegExp(`^\\s*${value}\\s+REG_\\w+\\s+(.+)$`, "m").exec(out);
+    return m ? m[1].trim() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function regTree(key: string): string {
+  try {
+    return execFileSync("reg", ["query", key, "/s"], {
+      encoding: "utf8",
+      timeout: 10_000,
+      windowsHide: true,
+      stdio: ["ignore", "pipe", "pipe"],
+      maxBuffer: 32 * 1024 * 1024,
+    });
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Steam library roots: the install path itself plus every library listed in
+ * `steamapps/libraryfolders.vdf`. Steam is a very common way to install Blender
+ * and it does not register the executable in Program Files or on PATH.
+ */
+function steamRoots(): string[] {
+  const roots: string[] = [];
+  const push = (p?: string) => {
+    if (!p) return;
+    const clean = p.replace(/\//g, "\\").replace(/\\+$/, "");
+    if (clean && !roots.includes(clean)) roots.push(clean);
+  };
+
+  push(
+    regValue("HKLM\\SOFTWARE\\WOW6432Node\\Valve\\Steam", "InstallPath") ??
+      regValue("HKLM\\SOFTWARE\\Valve\\Steam", "InstallPath") ??
+      regValue("HKCU\\SOFTWARE\\Valve\\Steam", "SteamPath"),
+  );
+
+  for (const root of [...roots]) {
+    const vdf = path.join(root, "steamapps", "libraryfolders.vdf");
+    if (!fs.existsSync(vdf)) continue;
+    try {
+      const text = fs.readFileSync(vdf, "utf8");
+      for (const m of text.matchAll(/"path"\s+"([^"]+)"/g)) {
+        push(m[1].replace(/\\\\/g, "\\"));
+      }
+    } catch {
+      /* ignore malformed vdf */
+    }
+  }
+  return roots;
+}
+
+/**
+ * Last resort on Windows: walk the Uninstall registry keys for a "Blender"
+ * display name and try its InstallLocation / DisplayIcon. Covers MSI installs
+ * on a drive that is not C:.
+ */
+function registryBlenderExes(): string[] {
+  const bases = [
+    "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+    "HKLM\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+    "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+  ];
+  const out: string[] = [];
+  for (const base of bases) {
+    let isBlender = false;
+    for (const raw of regTree(base).split(/\r?\n/)) {
+      const line = raw.trim();
+      if (!line) continue;
+      if (line.startsWith("HKEY")) {
+        isBlender = false;
+        continue;
+      }
+      const dm = /^DisplayName\s+REG_\w+\s+(.+)$/.exec(line);
+      if (dm && /blender/i.test(dm[1])) isBlender = true;
+      if (!isBlender) continue;
+      const im = /^(InstallLocation|DisplayIcon)\s+REG_\w+\s+(.+)$/.exec(line);
+      if (!im) continue;
+      const v = im[2].trim();
+      if (!v) continue;
+      out.push(/\.exe$/i.test(v) ? v : path.join(v, "blender.exe"));
+    }
+  }
+  return out;
 }
 
 /** Blender's per-version add-on directory, where users install add-ons. */

@@ -67,6 +67,7 @@ function usage(): void {
   line(`Usage: c2b <command> [options]
 `);
   line(`Commands:`);
+  line(`  version          Print the Chat2Blend version`);
   line(`  start            Start the local bridge (loopback only)`);
   line(`  stop             Stop the bridge`);
   line(`  status           Show bridge / blender / extension status`);
@@ -156,6 +157,12 @@ async function main(): Promise<void> {
     case "-h":
     case "--help":
       usage();
+      return;
+
+    case "version":
+    case "-v":
+    case "--version":
+      line(`chat2blend ${VERSION} (protocol c2b/1, node ${process.version}, ${process.platform}/${process.arch})`);
       return;
 
     case "start": {
@@ -490,8 +497,12 @@ async function doctor(): Promise<void> {
   const addonPaths = blenderAddonsPaths();
   line(`${addonPaths.length ? C.ok : C.wait}Blender add-on folders: ${addonPaths.length ? addonPaths.join(", ") : "none detected (install Blender once, or install the add-on manually)"}`);
 
+  // The browser extension is deprecated and not shipped in the npm package,
+  // so a missing build is informational, never an error.
   const extDist = path.resolve(__dirname, "..", "..", "..", "extension", "dist", "manifest.json");
-  line(`${fs.existsSync(extDist) ? C.ok : C.no}Extension build ${fs.existsSync(extDist) ? "present (apps/extension/dist)" : "missing - run: npm run build:extension"}`);
+  line(
+    `${C.info}Browser extension (deprecated): ${fs.existsSync(extDist) ? "build present at apps/extension/dist" : "not built - not required, the local ChatGPT desktop brain is the supported path"}`,
+  );
 
   const addonSrc = path.resolve(__dirname, "..", "..", "..", "..", "blender_addon", "chat2blend", "__init__.py");
   line(`${fs.existsSync(addonSrc) ? C.ok : C.no}Blender add-on source ${fs.existsSync(addonSrc) ? "present" : "missing"}`);

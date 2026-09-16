@@ -8,7 +8,12 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -17,6 +22,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -31,10 +37,38 @@ jobs:
         run: npm test
 
       - name: Package Blender add-on
+        if: matrix.os == 'ubuntu-latest'
         run: npm run package:blender
 
-      - name: Upload artifacts
+      - name: Upload add-on artifact
+        if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v4
         with:
           name: chat2blend-blender
           path: dist/chat2blend-blender.zip
+
+      - name: Verify npm package contents
+        if: matrix.os == 'ubuntu-latest'
+        run: npm pack --dry-run
+
+  smoke-cli:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: CLI responds
+        run: node dist/apps/bridge/src/cli.js version
+
+      - name: CLI help works
+        run: node dist/apps/bridge/src/cli.js --help

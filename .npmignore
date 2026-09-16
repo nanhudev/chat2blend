@@ -1,0 +1,30 @@
+# Everything not listed in package.json "files" is excluded already.
+# This file is a second line of defence: it keeps sources, tests, local state
+# and toolchains out of the tarball even if "files" is widened later.
+
+# local runtime state (contains the bridge token)
+.state/
+*.log
+logs/
+
+# local toolchain downloaded for verification (huge)
+_tools/
+
+# sources and tests - only dist/ is shipped
+apps/
+packages/
+tests/
+scripts/
+*.tsbuildinfo
+
+# compiled tests and the deprecated browser extension
+dist/**/*.test.js
+dist/**/*.test.d.ts
+dist/apps/extension/
+
+# dev-only config
+.npm-cache/
+.npmrc
+.github/
+.editorconfig
+.nvmrc
