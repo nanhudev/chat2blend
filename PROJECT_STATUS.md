@@ -23,7 +23,8 @@ The core loop is real and verified on Windows with Blender 4.2.9:
 | BLENDER | installed, addon enabled, real GUI verified | auto-connect, retry, pause, stop, clear |
 | STREAMING | implemented | C2B protocol + generic fence fallback |
 | CHUNK_PARSER | 16 tests passing | C2B markers, split markers, dedupe, fence parsing |
-| AGENT_SKILL | done | `skill/SKILL.md` |
+| AGENT_SKILL | done | `skill/SKILL.md`, also installed to `~/.workbuddy/skills/chat2blend/` |
+| HARNESS | implemented + E2E verified | `c2b harness "task"` -> compact status -> streaming chunks -> Blender GUI |
 | CLI | done | start/stop/status/doctor/pair/jobs/exec/prompt |
 | WINDOWS | tested | real Blender GUI E2E passed |
 | MACOS | architecture supported, not manually tested | paths use os.homedir / path.join |
@@ -39,7 +40,8 @@ The core loop is real and verified on Windows with Blender 4.2.9:
 2. **Extension popup** is implemented; live pairing flow has not been manually clicked through.
 3. **macOS / Linux** are not manually validated.
 4. **Extension icon** is a generated placeholder.
-5. **Headless CI** is not yet configured (Blender GUI E2E requires a real desktop session).
+5. **Browser extension capture** is structurally complete and built; live manual validation on ChatGPT.com is still pending a logged-in browser session.
+6. **Headless CI** is not yet configured (Blender GUI E2E requires a real desktop session).
 
 ## Test Results
 
