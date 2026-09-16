@@ -23,6 +23,61 @@ export interface ProviderAdapter {
   isGenerating(): boolean;
   /** selectors used for diagnostics */
   diagnostics(): Record<string, boolean>;
+  /** the prompt composer input, if the page exposes one */
+  composer(): HTMLElement | HTMLTextAreaElement | null;
+  /** put text into the composer without losing the page's internal state */
+  fillPrompt(text: string): boolean;
+  /** press send (only used when the user enabled auto-submit) */
+  submitPrompt(): boolean;
+}
+
+/**
+ * Composer selectors, newest ChatGPT first. ChatGPT keeps renaming this node,
+ * so anything that misses just disables auto-delivery — manual paste still works.
+ */
+const COMPOSER_SELECTORS = [
+  "div#prompt-textarea",
+  'div[contenteditable="true"][id*="prompt"]',
+  'textarea[data-id="root"]',
+  'textarea[placeholder*="Message" i]',
+  'div[contenteditable="true"][data-placeholder]',
+  'div[contenteditable="true"]',
+  "textarea",
+];
+
+const SEND_SELECTORS = [
+  'button[data-testid="send-button"]',
+  'button[aria-label*="Send" i]',
+  'button[aria-label*="发送" i]',
+  "form button[type='submit']",
+];
+
+/** Insert text in a way React-controlled inputs actually notice. */
+function insertText(el: HTMLElement, text: string): boolean {
+  el.focus();
+  if (el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement) {
+    const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
+    if (!setter) return false;
+    setter.call(el, text);
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    return true;
+  }
+  // contenteditable (ProseMirror): execCommand keeps React's internal model in sync
+  const sel = window.getSelection();
+  if (!sel) return false;
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  sel.removeAllRanges();
+  sel.addRange(range);
+  const ok = document.execCommand("insertText", false, text);
+  if (!ok) {
+    // last resort: plain text + input event
+    el.textContent = text;
+    el.dispatchEvent(new InputEvent("input", { bubbles: true }));
+  }
+  el.dispatchEvent(new InputEvent("input", { bubbles: true }));
+  return true;
 }
 
 const STOP_SELECTORS = [
@@ -106,7 +161,28 @@ class ChatGPTAdapter implements ProviderAdapter {
       "conversation-turn": document.querySelector('[data-testid^="conversation-turn-"]') !== null,
       "pre/code": document.querySelector("pre code") !== null || document.querySelector("pre") !== null,
       "stop-button": this.isGenerating(),
+      composer: this.composer() !== null,
     };
+  }
+
+  composer(): HTMLElement | HTMLTextAreaElement | null {
+    const el = firstExisting(COMPOSER_SELECTORS);
+    // never mistake an assistant code block for the composer
+    if (el && el.closest("pre")) return null;
+    return el;
+  }
+
+  fillPrompt(text: string): boolean {
+    const el = this.composer();
+    if (!el) return false;
+    return insertText(el, text);
+  }
+
+  submitPrompt(): boolean {
+    const btn = firstExisting(SEND_SELECTORS);
+    if (!btn) return false;
+    btn.click();
+    return true;
   }
 }
 
@@ -134,7 +210,24 @@ class GenericDomAdapter implements ProviderAdapter {
     return firstExisting(STOP_SELECTORS) !== null;
   }
   diagnostics(): Record<string, boolean> {
-    return { "pre": document.querySelector("pre") !== null };
+    return { pre: document.querySelector("pre") !== null, composer: this.composer() !== null };
+  }
+
+  composer(): HTMLElement | HTMLTextAreaElement | null {
+    return firstExisting(COMPOSER_SELECTORS);
+  }
+
+  fillPrompt(text: string): boolean {
+    const el = this.composer();
+    if (!el) return false;
+    return insertText(el, text);
+  }
+
+  submitPrompt(): boolean {
+    const btn = firstExisting(SEND_SELECTORS);
+    if (!btn) return false;
+    btn.click();
+    return true;
   }
 }
 

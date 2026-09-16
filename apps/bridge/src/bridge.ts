@@ -23,6 +23,17 @@ const CHUNK_TIMEOUT_MS = 120_000;
 const PAIR_CODE_TTL_MS = 10 * 60 * 1000;
 const EXT_STALE_MS = 15_000;
 
+/** A modeling task submitted by a coding agent (harness) and awaiting delivery to the web LLM. */
+export interface HarnessTask {
+  jobId: string;
+  task: string;
+  prompt: string;
+  provider: string;
+  createdAt: number;
+  status: "pending" | "delivered";
+  deliveredAt?: number;
+}
+
 export interface StartOptions extends Partial<BridgeConfig> {
   logger?: Logger;
   /** when true the caller already runs the process (no pid file writing) */
@@ -61,6 +72,8 @@ export async function startBridge(opts: StartOptions = {}): Promise<BridgeInstan
   const jobs = new JobManager();
   const blender = new BlenderTransport(config.blenderPort, config.host, logger);
   const startedAt = Date.now();
+  /** pending harness tasks, keyed by jobId */
+  const harnessTasks = new Map<string, HarnessTask>();
 
   let inFlight: InFlight | null = null;
   let lastExtensionHeartbeat: number | undefined;
@@ -405,6 +418,106 @@ export async function startBridge(opts: StartOptions = {}): Promise<BridgeInstan
         if (!authorized(ctx)) return sendError(ctx.res, 401, "unauthorized");
         const task = ctx.url.searchParams.get("task") ?? "";
         sendJson(ctx.res, 200, { ok: true, prompt: buildPrompt(task || "a modern three-seat fabric sofa") });
+      },
+    },
+
+    /* ------------------------- harness (agent) API -------------------------
+     * A coding agent (WorkBuddy / Codex / Cursor / Claude Code) is the HARNESS:
+     * it submits a natural-language task, ships the generated prompt to the web
+     * LLM, then polls a tiny status object. It never sees or writes bpy code.
+     * --------------------------------------------------------------------- */
+
+    {
+      // Submit a modeling task. Creates the job + returns the C2B prompt to deliver.
+      method: "POST",
+      pattern: "/api/harness/tasks",
+      handler: (ctx) => {
+        if (!authorized(ctx)) return sendError(ctx.res, 401, "unauthorized");
+        const body = (ctx.body ?? {}) as { task?: string; provider?: string; title?: string };
+        const task = (body.task ?? "").trim();
+        if (!task) return sendError(ctx.res, 400, "task is required");
+
+        const job = jobs.create({
+          provider: body.provider ?? "chatgpt",
+          title: body.title ?? task.slice(0, 120),
+          mode: "protocol",
+        });
+        const prompt = buildPrompt(task);
+        const record: HarnessTask = {
+          jobId: job.id,
+          task,
+          prompt,
+          provider: job.provider,
+          createdAt: Date.now(),
+          status: "pending",
+        };
+        harnessTasks.set(job.id, record);
+        logger.info(`harness task submitted: job=${job.id} task="${task.slice(0, 60)}"`);
+        sendJson(ctx.res, 201, {
+          ok: true,
+          jobId: job.id,
+          prompt,
+          provider: job.provider,
+          deliverUrl: `http://${config.host}:${config.httpPort}/api/harness/pending`,
+          statusUrl: `http://${config.host}:${config.httpPort}/api/harness/tasks/${job.id}`,
+        });
+      },
+    },
+    {
+      // Compact status for agents — chunk names/states only, never the code.
+      method: "GET",
+      pattern: "/api/harness/tasks/:id",
+      handler: (ctx) => {
+        if (!authorized(ctx)) return sendError(ctx.res, 401, "unauthorized");
+        const job = jobs.get(ctx.params.id);
+        if (!job) return sendError(ctx.res, 404, "job not found");
+        const failed = job.chunks.find((c) => c.status === "failed");
+        const ttff =
+          job.timing.firstChunkExecutedAt !== undefined && job.timing.generationStartedAt !== undefined
+            ? job.timing.firstChunkExecutedAt - job.timing.generationStartedAt
+            : undefined;
+        sendJson(ctx.res, 200, {
+          ok: true,
+          jobId: job.id,
+          task: harnessTasks.get(job.id)?.task ?? job.title,
+          status: job.status,
+          provider: job.provider,
+          chunkCount: job.chunks.length,
+          executedCount: job.chunks.filter((c) => c.status === "completed").length,
+          chunks: job.chunks.map((c) => ({ name: c.name ?? `#${c.index}`, status: c.status })),
+          ...(failed ? { error: { chunk: failed.name ?? `#${failed.index}`, message: failed.error?.slice(0, 400) } } : {}),
+          ...(ttff !== undefined ? { ttffMs: ttff } : {}),
+          elapsedMs: Date.now() - job.createdAt,
+          delivered: harnessTasks.get(job.id)?.status ?? "unknown",
+        });
+      },
+    },
+    {
+      // The browser extension polls this to auto-fill the prompt into the LLM page.
+      method: "GET",
+      pattern: "/api/harness/pending",
+      handler: (ctx) => {
+        if (!authorized(ctx)) return sendError(ctx.res, 401, "unauthorized");
+        const tasks = [...harnessTasks.values()]
+          .filter((t) => t.status === "pending")
+          .sort((a, b) => a.createdAt - b.createdAt)
+          .map((t) => ({ jobId: t.jobId, task: t.task, prompt: t.prompt, provider: t.provider, createdAt: t.createdAt }));
+        sendJson(ctx.res, 200, { ok: true, tasks });
+      },
+    },
+    {
+      method: "POST",
+      pattern: "/api/harness/pending/:id/ack",
+      handler: (ctx) => {
+        if (!authorized(ctx)) return sendError(ctx.res, 401, "unauthorized");
+        const rec = harnessTasks.get(ctx.params.id);
+        if (!rec) return sendError(ctx.res, 404, "task not found");
+        rec.status = "delivered";
+        rec.deliveredAt = Date.now();
+        const job = jobs.get(ctx.params.id);
+        if (job && job.timing.generationStartedAt === undefined) job.timing.generationStartedAt = Date.now();
+        logger.info(`harness task delivered to browser: job=${ctx.params.id}`);
+        sendJson(ctx.res, 200, { ok: true });
       },
     },
   ];

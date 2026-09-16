@@ -59,6 +59,8 @@ export interface ChunkRecord extends ChunkMessage {
 /** Timing instrumentation - TTFF (time to first form) is the headline metric. */
 export interface JobTiming {
   createdAt: number;
+  /** when the prompt was delivered to the LLM (TTFF baseline) */
+  generationStartedAt?: number;
   firstChunkDetectedAt?: number;
   firstChunkSentAt?: number;
   firstChunkExecutedAt?: number;

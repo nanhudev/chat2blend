@@ -27,6 +27,25 @@ function line(s = ""): void {
   process.stdout.write(s + "\n");
 }
 
+/** Compact status shape returned to coding agents (never contains generated code). */
+interface HarnessStatus {
+  jobId: string;
+  task: string;
+  status: string;
+  provider: string;
+  chunkCount: number;
+  executedCount: number;
+  chunks: { name: string; status: string }[];
+  error?: { chunk: string; message?: string };
+  ttffMs?: number;
+  elapsedMs: number;
+  delivered: string;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function usage(): void {
   line(`Chat2Blend v${VERSION} - use your LLM subscription as the 3D brain, let Blender execute.
 `);
@@ -41,6 +60,8 @@ function usage(): void {
   line(`  jobs             List recent jobs`);
   line(`  exec <file.py>   Send a python file straight into Blender`);
   line(`  prompt <task>    Print the Chat2Blend modelling prompt for a task`);
+  line(`  harness <task>   [AGENT] Submit a modelling task, auto-deliver to the web LLM, poll status`);
+  line(`  harness-status <jobId>   [AGENT] Compact job status (chunk names/states only)`);
   line(`  blender status   Show Blender discovery + connection`);
   line(`  logs             Tail the bridge log`);
   line(`  setup            Guided first-run checklist`);
@@ -203,6 +224,81 @@ async function main(): Promise<void> {
     case "prompt": {
       const task = args.join(" ") || "a modern three-seat fabric sofa";
       line(buildPrompt(task));
+      return;
+    }
+
+    /**
+     * Harness entry point for coding agents.
+     *   c2b harness "a modern three-seat fabric sofa"
+     *   c2b harness "..." --wait            # poll until the job settles
+     *   c2b harness "..." --json            # machine readable
+     * The agent never writes bpy: it submits a task, the prompt is auto-delivered
+     * to the web LLM by the browser extension, and it polls compact status only.
+     */
+    case "harness": {
+      const task = args.join(" ");
+      if (!task) {
+        line(`${C.no}Usage: c2b harness "<natural language modeling task>" [--wait] [--json]`);
+        process.exitCode = 1;
+        return;
+      }
+      const created = await api<{ jobId: string; prompt: string; provider: string }>("/api/harness/tasks", {
+        method: "POST",
+        body: JSON.stringify({ task }),
+      });
+
+      if (flags.json) {
+        line(JSON.stringify({ jobId: created.jobId, provider: created.provider }, null, 2));
+      } else {
+        line(`${C.ok}Harness task submitted`);
+        line(`${C.info}job      ${created.jobId}`);
+        line(`${C.info}provider ${created.provider}`);
+        line(`${C.info}prompt   ready for delivery (${created.prompt.length} chars)`);
+        line(`${C.info}status   c2b harness --status ${created.jobId}`);
+      }
+
+      if (!flags.wait) return;
+
+      const timeoutMs = Number(flags["timeout"] ?? 300_000);
+      const deadline = Date.now() + timeoutMs;
+      let last: HarnessStatus | undefined;
+      while (Date.now() < deadline) {
+        await sleep(1000);
+        last = await api<HarnessStatus>(`/api/harness/tasks/${created.jobId}`);
+        if (!flags.json) {
+          line(`${C.info}[${last.status}] chunks ${last.executedCount}/${last.chunkCount} ${last.chunks.map((c) => `${c.name}:${c.status}`).join(" ")}`);
+        }
+        if (last.status === "completed" || last.status === "failed" || last.status === "cancelled") break;
+      }
+      if (flags.json) {
+        line(JSON.stringify(last, null, 2));
+      } else if (last) {
+        const ok = last.status === "completed";
+        line(ok ? `${C.ok}Job completed — chunks ${last.executedCount}/${last.chunkCount}` : `${C.no}Job ${last.status}`);
+        if (last.error) line(`${C.no}${last.error.chunk}: ${last.error.message}`);
+        if (last.ttffMs !== undefined) line(`${C.info}TTFF ${(last.ttffMs / 1000).toFixed(1)}s`);
+      }
+      return;
+    }
+
+    case "harness-status": {
+      const jobId = args[0];
+      if (!jobId) {
+        line(`${C.no}Usage: c2b harness-status <jobId>`);
+        process.exitCode = 1;
+        return;
+      }
+      const s = await api<HarnessStatus>(`/api/harness/tasks/${jobId}`);
+      if (flags.json) {
+        line(JSON.stringify(s, null, 2));
+        return;
+      }
+      line(`${C.info}job     ${s.jobId}  ${s.status}`);
+      line(`${C.info}task    ${s.task}`);
+      line(`${C.info}chunks  ${s.executedCount}/${s.chunkCount}`);
+      for (const c of s.chunks) line(`${C.info}  - ${c.name}: ${c.status}`);
+      if (s.error) line(`${C.no}${s.error.chunk}: ${s.error.message}`);
+      if (s.ttffMs !== undefined) line(`${C.info}TTFF    ${(s.ttffMs / 1000).toFixed(1)}s`);
       return;
     }
 

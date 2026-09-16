@@ -137,6 +137,22 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
     reply?.({ ok: true, blocks: blocks.length });
     return;
   }
+  if (msg?.type === "c2b/deliver-prompt") {
+    // Harness path: the agent submitted a task, drop the C2B prompt into the composer.
+    const text = String(msg.prompt ?? "");
+    const filled = adapter.fillPrompt(text);
+    let submitted = false;
+    if (filled && msg.autoSubmit === true && settings.autoSubmit) {
+      submitted = adapter.submitPrompt();
+      if (submitted) {
+        // a new response is coming: reset local dedupe state for the fresh job
+        chunkStreams.clear();
+        chunkIndex = 0;
+      }
+    }
+    reply?.({ ok: filled, filled, submitted });
+    return;
+  }
   if (msg?.type === "c2b/diagnostics") {
     reply?.({ provider: adapter.id, label: adapter.label, generating: adapter.isGenerating(), ...adapter.diagnostics() });
   }

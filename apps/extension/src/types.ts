@@ -5,6 +5,12 @@ export interface Settings {
   token: string;
   autoExecute: boolean;
   provider: ProviderId;
+  /** harness: auto-fill agent-submitted prompts into the LLM composer */
+  harnessAutoDeliver: boolean;
+  /** harness: open the provider page if no tab is available (off by default) */
+  harnessAutoOpen: boolean;
+  /** press Send after filling. Off by default: the user sends the prompt. */
+  autoSubmit: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -12,6 +18,9 @@ export const DEFAULT_SETTINGS: Settings = {
   token: "",
   autoExecute: false,
   provider: "unknown",
+  harnessAutoDeliver: true,
+  harnessAutoOpen: false,
+  autoSubmit: false,
 };
 
 /** content script -> service worker */

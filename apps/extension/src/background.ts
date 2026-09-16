@@ -106,6 +106,65 @@ async function heartbeat(): Promise<void> {
   }
 }
 
+// ------------------------------------------------- harness task auto-delivery
+const PROVIDER_URLS: Record<string, string> = {
+  chatgpt: "https://chatgpt.com/",
+  claude: "https://claude.ai/new",
+  gemini: "https://gemini.google.com/app",
+};
+
+function providerHosts(provider: string): string[] {
+  if (provider === "chatgpt") return ["chatgpt.com", "openai.com"];
+  if (provider === "claude") return ["claude.ai"];
+  if (provider === "gemini") return ["gemini.google.com"];
+  return [];
+}
+
+async function findProviderTab(provider: string): Promise<number | undefined> {
+  const hosts = providerHosts(provider);
+  const tabs = await chrome.tabs.query({});
+  const hit = tabs.find((t) => t.id !== undefined && t.url && hosts.some((h) => t.url!.includes(h)));
+  return hit?.id;
+}
+
+/**
+ * Coding agents submit tasks through `c2b harness "<task>"`. The service worker
+ * picks them up and drops the generated C2B prompt into the LLM composer so the
+ * user only has to press Send (or enable auto-submit).
+ */
+async function pollHarness(): Promise<void> {
+  if (!settings.token || !settings.harnessAutoDeliver) return;
+  try {
+    const r = await api<{ tasks: { jobId: string; task: string; prompt: string; provider: string }[] }>("/api/harness/pending");
+    for (const task of r.tasks ?? []) {
+      let tabId = await findProviderTab(task.provider);
+      if (tabId === undefined && settings.harnessAutoOpen) {
+        const url = PROVIDER_URLS[task.provider];
+        if (url) {
+          const tab = await chrome.tabs.create({ url, active: false });
+          tabId = tab.id;
+        }
+      }
+      if (tabId === undefined) continue;
+      try {
+        const res = (await chrome.tabs.sendMessage(tabId, {
+          type: "c2b/deliver-prompt",
+          prompt: task.prompt,
+          autoSubmit: settings.autoSubmit,
+        })) as { ok?: boolean } | undefined;
+        if (res?.ok) {
+          currentJobId = task.jobId;
+          await api(`/api/harness/pending/${task.jobId}/ack`, { method: "POST", body: "{}" });
+        }
+      } catch {
+        // content script not injected yet - retry on the next tick
+      }
+    }
+  } catch {
+    // bridge down: the heartbeat already reports this
+  }
+}
+
 // ------------------------------------------------------------------ wiring
 chrome.runtime.onInstalled.addListener(() => {
   void load();
@@ -118,6 +177,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 });
 
 setInterval(() => void heartbeat(), 5000);
+setInterval(() => void pollHarness(), 3000);
 
 chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   const m = msg as { type: string } & Record<string, unknown>;
