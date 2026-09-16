@@ -30,7 +30,8 @@ The core loop is real and verified on Windows with Blender 4.2.9:
 | LINUX | architecture supported, not manually tested | common blender paths included |
 | DOCS | done | README, README.zh-CN, ARCHITECTURE, PROTOCOL, SECURITY, STREAMING, AGENT_INTEGRATION, ROADMAP |
 | TESTS | 16 Node tests passing | Parser + bridge integration |
-| GITHUB | pending | Need user to create repo or grant repo-create permission |
+| GITHUB | done | public repo https://github.com/nanhudev/chat2blend — 9 commits pushed, topics set |
+| CI | done | GitHub Actions green: install → typecheck → test → build → package |
 
 ## Known Issues
 
@@ -38,6 +39,7 @@ The core loop is real and verified on Windows with Blender 4.2.9:
 2. **Extension popup** is implemented; live pairing flow has not been manually clicked through.
 3. **macOS / Linux** are not manually validated.
 4. **Extension icon** is a generated placeholder.
+5. **Push auth** required `gh auth login` (device flow) once — the GitHub MCP connector token has no repo-create scope.
 5. **Headless CI** is not yet configured.
 
 ## Test Results
