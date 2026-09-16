@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-17
+
+### Changed
+
+- **README rewritten around first-run experience.** The front page now opens with
+  what the tool *feels* like ("Describe it. Watch Blender build it.") and a real
+  demo image, instead of leading with transport details. Protocol and port
+  descriptions moved down to "How it works". Both `README.md` and
+  `README.zh-CN.md` were reordered to: hero → demo → why → quick start →
+  examples → how it works → agent → support → security → development → roadmap.
+- `c2b setup` now prints the **absolute** path of the Blender add-on for the
+  current install (npm or source checkout) and describes the local-brain flow.
+  Previously it printed a relative `dist/chat2blend-blender.zip` and a
+  browser-extension walkthrough that npm users cannot follow.
+- `c2b doctor` reports the add-on as a ready-to-pick path instead of
+  "source present", and no longer surfaces the deprecated extension.
+- `c2b brain` preflights the bridge and the Blender connection, exiting with
+  actionable guidance instead of a raw error when either is missing.
+- `c2b --help` is grouped by task (start here / make something / bridge / agents),
+  with the legacy extension commands marked deprecated.
+
+### Added
+
+- `docs/assets/hero.svg` and `docs/assets/demo-sofa.png` — a real, unedited
+  screenshot of a GUI run (6 streaming chunks, 14 objects, Blender 4.2.9).
+
+### Fixed
+
+- The npm tarball no longer ships README images (`files` now negates
+  `docs/assets/**` and `docs/demo-cube.png`). Tarball size drops from 321 kB
+  to 69 kB.
+
 ## [0.2.0] - 2026-09-16
 
 ### Added

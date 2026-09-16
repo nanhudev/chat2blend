@@ -1,6 +1,6 @@
 {
   "name": "chat2blend",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Use your LLM subscription as the 3D brain. Let Blender execute. Local-first bridge that drives the ChatGPT desktop app over CDP and streams bpy chunks straight into Blender - no API key, loopback only, zero runtime dependencies.",
   "keywords": [
     "blender",
