@@ -52,6 +52,9 @@ bpy.ops.object.light_add(type='AREA', location=(2, -4, 5))
 bpy.context.object.data.energy = 1000
 bpy.context.object.data.size = 5
 scene.render.engine = 'CYCLES'
+scene.cycles.use_denoising = False
+for layer in scene.view_layers:
+    layer.cycles.use_denoising = False
 scene.cycles.samples = 24
 scene.render.resolution_x, scene.render.resolution_y = 900, 900
 scene.render.resolution_percentage = 100

@@ -44,6 +44,9 @@ bpy.context.object.data.energy = 900
 bpy.context.object.data.size = 5
 scene = bpy.context.scene
 scene.render.engine = 'CYCLES'
+scene.cycles.use_denoising = False
+for layer in scene.view_layers:
+    layer.cycles.use_denoising = False
 scene.cycles.samples = 16
 scene.render.resolution_x = 900
 scene.render.resolution_y = 600
