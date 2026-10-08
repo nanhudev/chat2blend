@@ -16,7 +16,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Install Blender
-        run: sudo apt-get update && sudo apt-get install -y blender
+        run: sudo apt-get update && sudo apt-get install -y blender python3-numpy
       - name: Test real geometry, errors and namespace recovery
         run: npm run test:blender
         env:
