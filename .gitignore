@@ -26,3 +26,13 @@ __pycache__/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Desktop build outputs
+desktop/node_modules/
+desktop/dist/
+desktop/runtime/
+desktop/test-results/
+
+desktop/interactive-check.cjs
+
+docs/assets/account-check.json

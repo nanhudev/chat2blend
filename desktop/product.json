@@ -1,0 +1,9 @@
+{
+  "name": "Chat2Blend",
+  "kind": "blender",
+  "headline": "把构想做成可编辑的 3D 资产",
+  "description": "从独立部件到 UV、贴图、骨骼与动作，一次导出可编辑工程和可交换的 GLB。",
+  "category": "AI × 3D 资产工作台",
+  "tagline": "设计、生成、检查、导出",
+  "prompt": "生成一个蓝绿色的机械机器人，标准尺寸，部件清晰，带骨骼和挥手动作。"
+}

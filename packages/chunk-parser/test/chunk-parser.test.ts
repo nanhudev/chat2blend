@@ -7,6 +7,17 @@ import bpy
 # C2B:END
 `;
 
+test("Windows CRLF chunks parse and retain body offsets", () => {
+  const text = "# C2B:CHUNK setup\r\nimport bpy\r\n# C2B:END\r\n# C2B:CHUNK next\r\nvalue = 2\r\n# C2B:END";
+  const chunks = parseC2BChunks(text);
+  assert.deepEqual(chunks.map(c => c.name), ["setup", "next"]);
+  assert.equal(text.slice(chunks[0]!.startOffset, chunks[0]!.startOffset + 10), "import bpy");
+  const stream = new C2BChunkStream();
+  assert.equal(stream.push(text.slice(0, text.indexOf("# C2B:END") + 10)).chunks.length, 0);
+  assert.equal(stream.push(text).chunks.length, 1);
+  assert.equal(stream.flush().chunks.length, 1);
+});
+
 test("case 1: complete chunk is emitted once", () => {
   const chunks = parseC2BChunks(CHUNK_A);
   assert.equal(chunks.length, 1);

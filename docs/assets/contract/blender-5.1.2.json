@@ -1,0 +1,43 @@
+{
+  "ok": true,
+  "scope": "synthetic-parser-real-blender-executor",
+  "providerVerified": false,
+  "guiVerified": false,
+  "blender": "5.1.2",
+  "chunks": 6,
+  "sofaObjects": 14,
+  "checks": [
+    {
+      "name": "six chunks executed successfully with shared helpers",
+      "ok": true
+    },
+    {
+      "name": "exact expected 14 mesh objects; default cube cannot fake success",
+      "ok": true
+    },
+    {
+      "name": "all geometry has finite positive dimensions",
+      "ok": true
+    },
+    {
+      "name": "all meshes have assigned materials",
+      "ok": true
+    },
+    {
+      "name": "real render and editable blend artifacts exist",
+      "ok": true
+    },
+    {
+      "name": "runtime error is reported as failed",
+      "ok": true
+    },
+    {
+      "name": "ending a job releases its namespace",
+      "ok": true
+    },
+    {
+      "name": "next job starts clean and creates real geometry",
+      "ok": true
+    }
+  ]
+}
