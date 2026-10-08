@@ -4,6 +4,9 @@ on:
     branches: ["portfolio/**"]
   pull_request:
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -30,7 +33,6 @@ jobs:
         working-directory: desktop
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: npm run test:package
         working-directory: desktop
       - uses: actions/upload-artifact@v4

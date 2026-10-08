@@ -82,6 +82,11 @@
     "portable": {
       "artifactName": "chat2blend-${version}-Portable-${arch}.${ext}"
     },
-    "icon": "icons/icon.png"
+    "icon": "icons/icon.png",
+    "publish": null
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nanhudev/chat2blend.git"
   }
 }
