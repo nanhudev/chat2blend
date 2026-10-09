@@ -18,3 +18,5 @@ Windows 安装包：`desktop/dist/*-Setup-x64.exe`。便携包：`desktop/dist/*
 验证：`npm test` 检查授权回调、流式响应、输出结构；`npm run test:ui` 打开真实桌面窗口检查基本操作。Chat2Blend 设置 `DESKTOP_ASSET_TEST=1` 时，还会打开真实 Blender 生成资产。
 
 当前安装包没有商业代码签名与 Apple 公证。构建成功、安装器启动、账户授权、真实生成和实际用户验收是不同验证环节。没有完成的环节不要标为通过。
+
+Linux 原生构建：在 Linux 的 desktop 目录运行 `npm run package:linux`，生成 x64 AppImage 和 amd64 deb。CI 在 Ubuntu 22.04 上通过虚拟显示器检查窗口，并检查安装后的 deb 和解包后的 AppImage。发布前须确认对应构建和检查已通过。

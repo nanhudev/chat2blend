@@ -9,6 +9,8 @@
 | Windows 64 位 | `chat2blend-0.4.0-Setup-x64.exe` |
 | Windows 免安装体验 | `chat2blend-0.4.0-Portable-x64.exe` |
 | Apple Silicon Mac | `chat2blend-0.4.0-mac-arm64.dmg` |
+| Linux x64 通用便携版 | `chat2blend-0.4.0-linux-x64.AppImage` |
+| Debian / Ubuntu x64 | `chat2blend-0.4.0-linux-amd64.deb` |
 
 Windows 安装版支持选择目录；便携版直接双击启动。Mac 打开 DMG，将应用拖到 Applications。目前没有 Intel Mac 安装包。桌面安装包包含运行环境，不需要为了打开界面安装 Node。
 
@@ -38,3 +40,9 @@ Blender 未找到时，在界面选择已安装的 Blender 程序；Mac 可选�
 
 [更详细的构建与授权说明](DESKTOP.md) · [功能和证据边界](PRODUCT_CASE.md)
 
+
+## Linux 使用
+
+Debian / Ubuntu 推荐 deb：使用系统软件安装器打开，安装后从应用菜单启动。AppImage 用于其他 Linux 桌面发行版，在文件属性中允许作为程序执行后双击打开。AppImage 需要系统提供 FUSE 运行支持；若 Debian / Ubuntu 的系统缺少它，可优先使用 deb。
+
+当前提供 Linux x64。Linux 自动化验收在 Ubuntu 22.04 的虚拟显示器上打开实际应用窗口，检查已安装 deb 和解包 AppImage；不等同于使用者设备实测。官方登录需要可用的 GNOME Keyring 或 KWallet；系统凭据加密不可用时会明确拒绝保存登录凭据。

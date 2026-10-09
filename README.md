@@ -1,6 +1,6 @@
 > **Desktop portfolio edition 0.4.0 (preview)**: [Download](https://github.com/nanhudev/chat2blend/releases/tag/desktop-v0.4.0) · [Getting started](docs/QUICKSTART.md) · [Product case and evidence](docs/PORTFOLIO.md) · [Resume notes](docs/RESUME.md)
 >
-> Windows EXE and Apple Silicon DMG. The existing web / CLI documentation follows; the desktop product case describes its current scope. Live AI requests require separate acceptance with the user's own authorized account.
+> Windows EXE, Apple Silicon DMG and Linux x64 AppImage / deb. The existing web / CLI documentation follows; the desktop product case describes its current scope. Live AI requests require separate acceptance with the user's own authorized account.
 
 <div align="center">
 
