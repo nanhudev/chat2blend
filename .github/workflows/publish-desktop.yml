@@ -1,5 +1,5 @@
 name: Publish desktop release
-run-name: Publish desktop 0.4.1 from build ${{ inputs.source_run }}
+run-name: Publish desktop from verified build ${{ inputs.source_run }}
 on:
   workflow_dispatch:
     inputs:
