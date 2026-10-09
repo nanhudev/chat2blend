@@ -12,10 +12,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest]
+        os: [windows-latest, macos-latest, ubuntu-22.04]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: Install Linux desktop dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libgtk-3-0 libnss3 libasound2 libgbm1 libsecret-1-0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -26,17 +31,43 @@ jobs:
       - run: npm test
         working-directory: desktop
       - run: npm run test:ui
+        if: runner.os != 'Linux'
+        working-directory: desktop
+      - name: Check Linux desktop window
+        if: runner.os == 'Linux'
+        run: xvfb-run -a npm run test:ui
         working-directory: desktop
       - run: npm run package
         working-directory: desktop
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
       - run: npm run test:package
+        if: runner.os != 'Linux'
         working-directory: desktop
+      - name: Check Linux packaged application
+        if: runner.os == 'Linux'
+        run: xvfb-run -a npm run test:package
+        working-directory: desktop
+      - name: Install and check Debian package
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y ./desktop/dist/*-linux-amd64.deb
+          DESKTOP_EXECUTABLE="$(readlink -f "$(command -v chat2blend)")" xvfb-run -a npm run test:package --prefix desktop
+      - name: Extract and check AppImage
+        if: runner.os == 'Linux'
+        working-directory: desktop
+        run: |
+          mkdir -p test-results/appimage
+          cd test-results/appimage
+          ../../dist/*-linux-x64.AppImage --appimage-extract > /dev/null
+          DESKTOP_EXECUTABLE="$PWD/squashfs-root/AppRun" xvfb-run -a node ../../package-check.cjs
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-${{ matrix.os }}
           path: |
             desktop/dist/*.exe
             desktop/dist/*.dmg
+            desktop/dist/*.AppImage
+            desktop/dist/*.deb
+            docs/assets/desktop.png
           if-no-files-found: error
