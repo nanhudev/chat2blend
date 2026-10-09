@@ -1,7 +1,5 @@
 name: Desktop installers
 on:
-  push:
-    branches: ["portfolio/**"]
   pull_request:
   workflow_dispatch:
 concurrency:
