@@ -1,3 +1,7 @@
+> **桌面作品集版 0.4.0（预览）**：[下载安装包](https://github.com/nanhudev/chat2blend/releases/tag/desktop-v0.4.0) · [三分钟上手](docs/QUICKSTART.md) · [产品案例与真实证据](docs/PORTFOLIO.md) · [简历描述](docs/RESUME.md)
+>
+> 提供 Windows EXE 与 Apple Silicon DMG。下方保留原有网页 / CLI 介绍；新桌面版的能力与验证范围以产品案例为准，真实账户 AI 请求仍待本人授权验收。
+
 <div align="center">
 
 <img src="docs/assets/hero.svg" alt="说一句，看 Blender 长出来" width="100%">
