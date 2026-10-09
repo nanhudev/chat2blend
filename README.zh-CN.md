@@ -1,4 +1,4 @@
-> **桌面版 0.4.1（预览）**：[下载安装包](https://github.com/nanhudev/chat2blend/releases/tag/desktop-v0.4.1) · [三分钟上手](docs/QUICKSTART.md) · [桌面构建与授权](docs/DESKTOP.md)
+> **桌面版 0.4.1（预览）**：[下载安装包](https://github.com/nanhudev/chat2blend/releases/tag/desktop-v0.4.2) · [三分钟上手](docs/QUICKSTART.md) · [桌面构建与授权](docs/DESKTOP.md)
 >
 > 提供 Windows x64 EXE、Apple Silicon DMG 与 Linux x64 AppImage / deb。下方为已有网页 / CLI 说明，真实 AI 请求需要使用者本人完成官方授权。
 

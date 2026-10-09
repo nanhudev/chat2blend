@@ -7,9 +7,9 @@ const examples = {
  blender:{type:'robot',data:{color:[0.16,0.55,0.72],scale:1}}
 };
 function node(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
-function status(text,error=false){$('progress').textContent=text;$('progress').style.color=error?'#a04332':'';}
+function status(text,error=false){$('progress').textContent=text;$('progress').dataset.status=error?'error':'ready';}
 async function action(method,payload){return window.desktop.call(method,payload);}
-async function task(fn){if(busy)return;busy=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);try{await fn();}catch(e){status(e.message,true);}finally{busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);}}
+async function task(fn){if(busy)return;busy=true;document.body.dataset.busy='true';$('task').setAttribute('aria-busy','true');document.querySelectorAll('button').forEach(b=>b.disabled=true);try{await fn();}catch(e){status(e.message,true);}finally{busy=false;document.body.dataset.busy='false';$('task').setAttribute('aria-busy','false');document.querySelectorAll('button').forEach(b=>b.disabled=false);}}
 function showResult(value,sample=false){result=value;$('empty').hidden=true;$('result-content').replaceChildren();$('result-badge').textContent=sample?'固定示例 · 未调用 AI':'已生成 · 请审阅';$('result-actions').hidden=sample;$('execute').hidden=value.type!=='plan';$('ppt').hidden=value.type!=='lesson';
  const add=(title,lines)=>{const c=node('div',undefined,'card');c.append(node('h3',title));for(const line of lines)c.append(node('p',line));$('result-content').append(c);};
  if(value.type==='plan'){value.data.steps.forEach((s,i)=>add(`${i+1}. ${s.task}`,s.acceptance.map(a=>'验收：'+a)));add('执行前确认',['选择的项目文件将被修改。请检查以上步骤，并保留项目版本。执行器结束后仍需审查实际改动与测试。']);}
@@ -20,7 +20,7 @@ function showResult(value,sample=false){result=value;$('empty').hidden=true;$('r
  status(sample?'示例仅供了解流程；点击生成方案才会请求 AI。':'成果已准备好，请审阅。');}
 async function refresh(){state=await action('status');$('account').textContent=state.account.connected?`${state.account.email || '已登录'} · ${state.account.sharing?'已授权套餐使用，实际可用性以生成结果为准':'尚未授权套餐使用'}`:'尚未登录。使用官方授权页，应用不会索取你的密码。';$('login').hidden=state.account.connected;$('logout').hidden=!state.account.connected;$('output').textContent=state.outputDir;$('workspace').textContent=state.workingDir||'请先选择项目文件夹。执行会修改其中的文件，请先保留版本记录。';$('blender-location').textContent=state.blenderPath||'未找到 Blender，请选择已安装的程序。';}
 async function loadModels(){const models=await action('models');$('model').replaceChildren(...models.map(m=>{const o=node('option',m.name||m.slug);o.value=m.slug;return o;}));if(!models.length)throw new Error('账户未返回可用模型，请检查授权与额度。');}
-async function init(){await refresh();const p=state.product;$('app-name').textContent=p.name;$('headline').textContent=p.headline;$('description').textContent=p.description;$('tagline').textContent=p.tagline;$('category').textContent=p.category;$('prompt').value=p.prompt;document.title=p.name;$('source-wrap').hidden=p.kind!=='teacher';$('workspace-row').hidden=p.kind!=='agent';$('blender-row').hidden=p.kind!=='blender';$('robot-controls').hidden=p.kind!=='blender';if(state.account.sharing)try{await loadModels();}catch(e){status(e.message,true);}}
+async function init(){await refresh();const p=state.product;document.body.dataset.product=p.kind;if(p.kind==='blender')document.querySelector('.steps span').textContent='选配色与尺寸';$('app-name').textContent=p.name;$('headline').textContent=p.headline;$('description').textContent=p.description;$('tagline').textContent=p.tagline;$('category').textContent=p.category;$('prompt').value=p.prompt;document.title=p.name;$('source-wrap').hidden=p.kind!=='teacher';$('workspace-row').hidden=p.kind!=='agent';$('blender-row').hidden=p.kind!=='blender';$('robot-controls').hidden=p.kind!=='blender';if(state.account.sharing)try{await loadModels();}catch(e){status(e.message,true);}}
 $('login').onclick=()=>task(async()=>{status('已打开官方授权页，请在浏览器完成登录后返回。');await action('signIn');await refresh();await loadModels();status('登录已完成，可以创建任务。');});
 $('logout').onclick=()=>task(async()=>{await action('logout');await refresh();$('model').replaceChildren(node('option','登录后选择'));status('已退出登录。');});
 $('usage').onclick=()=>task(()=>action('usage'));
@@ -35,4 +35,5 @@ $('execute').onclick=()=>task(async()=>{if(!confirm('将按审阅的步骤修改
 $('ppt').onclick=()=>task(async()=>{const file=await action('exportPpt');if(file)status('课件已保存：'+file);});
 $('save').onclick=()=>task(async()=>status('结果已保存：'+await action('save')));
 window.desktop.onProgress(p=>status(p.stage==='thinking'?'AI 正在整理方案…':p.text));
+document.querySelectorAll('nav a').forEach(link=>link.addEventListener('click',()=>{document.querySelectorAll('nav a').forEach(a=>a.removeAttribute('aria-current'));link.setAttribute('aria-current','true');}));
 init().catch(e=>status(e.message,true));

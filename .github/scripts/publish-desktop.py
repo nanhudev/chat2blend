@@ -10,7 +10,7 @@ import zipfile
 
 REPOSITORY = os.environ["GITHUB_REPOSITORY"]
 REPO = REPOSITORY.split("/")[1]
-VERSION = "0.4.1"
+VERSION = "0.4.2"
 TAG = "desktop-v" + VERSION
 OUT = pathlib.Path("release-publish")
 SOURCE = os.environ["SOURCE_SHA"]
@@ -82,7 +82,9 @@ def prepare():
 
 ## 本版更新
 
-- 新增 Linux x64 AppImage 与 Debian / Ubuntu deb。
+- 内置离线中文字体，修复 Linux 界面与发布截图中的方块字。
+- 优化三款应用的布局、产品配色、导航状态、输入焦点和成果卡片。
+- 增加轻量入场、按钮与处理状态动效，尊重系统减少动态效果设置。
 - Windows、macOS、Linux 均在各自原生环境重新构建并检查打包后的应用窗口。
 - Linux 检查覆盖打包程序、实际安装的 deb 和解包后的 AppImage AppRun；运行于 Ubuntu 22.04 虚拟显示器。
 - 文档面向使用者和开源贡献者，提供安装、操作、授权、构建与问题反馈说明。

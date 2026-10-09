@@ -1,4 +1,4 @@
-> **Desktop 0.4.1 (preview)**: [Download](https://github.com/nanhudev/chat2blend/releases/tag/desktop-v0.4.1) · [Getting started](docs/QUICKSTART.md) · [Desktop build and authentication](docs/DESKTOP.md)
+> **Desktop 0.4.1 (preview)**: [Download](https://github.com/nanhudev/chat2blend/releases/tag/desktop-v0.4.2) · [Getting started](docs/QUICKSTART.md) · [Desktop build and authentication](docs/DESKTOP.md)
 >
 > Windows x64 EXE, Apple Silicon DMG, and Linux x64 AppImage / deb. Existing web / CLI documentation follows. Live AI requests require the user's own authorized account.
 

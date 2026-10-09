@@ -1,6 +1,6 @@
 {
   "name": "chat2blend-desktop",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "private": true,
   "description": "从独立部件到 UV、贴图、骨骼与动作，一次导出可编辑工程和可交换的 GLB。",
   "author": "nanhudev",
@@ -37,6 +37,7 @@
       "*.json",
       "index.html",
       "style.css",
+      "fonts/**",
       "!package-lock.json",
       "!stage.cjs",
       "!runtime/**",
