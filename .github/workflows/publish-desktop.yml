@@ -1,0 +1,45 @@
+name: Publish desktop release
+run-name: Publish desktop 0.4.1 from build ${{ inputs.source_run }}
+on:
+  workflow_dispatch:
+    inputs:
+      source_run:
+        description: Successful Desktop installers run on main
+        required: true
+        type: string
+      source_sha:
+        description: Exact source commit of that run
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN: ${{ inputs.source_run }}
+      SOURCE_SHA: ${{ inputs.source_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate source build
+        run: python .github/scripts/publish-desktop.py validate
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: desktop-*
+          path: desktop-artifacts
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.source_run }}
+      - name: Prepare user documentation and provenance
+        run: python .github/scripts/publish-desktop.py prepare
+      - name: Upload, verify and publish
+        run: python .github/scripts/publish-desktop.py publish

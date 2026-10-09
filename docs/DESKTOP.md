@@ -1,6 +1,6 @@
 # Chat2Blend 桌面版
 
-Windows 安装包：`desktop/dist/*-Setup-x64.exe`。便携包：`desktop/dist/*-Portable-x64.exe`。构建输出不进入 Git；[公开安装包](https://github.com/nanhudev/chat2blend/releases/tag/desktop-v0.4.0)提供 Windows x64 和 Apple Silicon Mac 预览版本，附 SHA256SUMS。[三分钟上手](QUICKSTART.md)适用于非开发者。
+Windows 安装包：`desktop/dist/*-Setup-x64.exe`。便携包：`desktop/dist/*-Portable-x64.exe`。构建输出不进入 Git；[公开安装包](https://github.com/nanhudev/chat2blend/releases/tag/desktop-v0.4.1)提供 Windows x64 和 Apple Silicon Mac 预览版本，附 SHA256SUMS。[三分钟上手](QUICKSTART.md)适用于非开发者。
 
 1. 打开应用，先看固定示例了解操作。
 2. 在“账户与保存位置”使用 ChatGPT 登录，在 OpenAI 官方页面完成授权。

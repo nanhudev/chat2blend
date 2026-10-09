@@ -2,15 +2,15 @@
 
 ## 下载安装
 
-从 [GitHub Release](https://github.com/nanhudev/chat2blend/releases/tag/desktop-v0.4.0) 下载：
+从 [GitHub Release](https://github.com/nanhudev/chat2blend/releases/tag/desktop-v0.4.1) 下载：
 
 | 你的设备 | 下载文件 |
 |---|---|
-| Windows 64 位 | `chat2blend-0.4.0-Setup-x64.exe` |
-| Windows 免安装体验 | `chat2blend-0.4.0-Portable-x64.exe` |
-| Apple Silicon Mac | `chat2blend-0.4.0-mac-arm64.dmg` |
-| Linux x64 通用便携版 | `chat2blend-0.4.0-linux-x64.AppImage` |
-| Debian / Ubuntu x64 | `chat2blend-0.4.0-linux-amd64.deb` |
+| Windows 64 位 | `chat2blend-0.4.1-Setup-x64.exe` |
+| Windows 免安装体验 | `chat2blend-0.4.1-Portable-x64.exe` |
+| Apple Silicon Mac | `chat2blend-0.4.1-mac-arm64.dmg` |
+| Linux x64 通用便携版 | `chat2blend-0.4.1-linux-x64.AppImage` |
+| Debian / Ubuntu x64 | `chat2blend-0.4.1-linux-amd64.deb` |
 
 Windows 安装版支持选择目录；便携版直接双击启动。Mac 打开 DMG，将应用拖到 Applications。目前没有 Intel Mac 安装包。桌面安装包包含运行环境，不需要为了打开界面安装 Node。
 
@@ -38,7 +38,7 @@ Windows 安装版支持选择目录；便携版直接双击启动。Mac 打开 D
 
 Blender 未找到时，在界面选择已安装的 Blender 程序；Mac 可选择 Blender.app。当前完整资产配方是机械机器人，不能把任意人物提示词视为已支持能力。
 
-[更详细的构建与授权说明](DESKTOP.md) · [功能和证据边界](PRODUCT_CASE.md)
+[更详细的构建与授权说明](DESKTOP.md)
 
 
 ## Linux 使用
