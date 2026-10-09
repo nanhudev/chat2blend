@@ -1,0 +1,15 @@
+{
+  "method": "Real visible Electron -> visible Blender -> exported files",
+  "directory": "C:\\Users\\Administrator\\Documents\\Chat2Blend\\Chat2Blend-2026-10-08T18-26-33-580Z",
+  "checks": {
+    "separate_parts": true,
+    "uv_nonempty": true,
+    "uv_in_bounds": true,
+    "all_vertices_weighted": true,
+    "rig_moves_geometry": true,
+    "texture_files": true
+  },
+  "parts": 19,
+  "bones": 15,
+  "oauthVerified": false
+}

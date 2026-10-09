@@ -1,0 +1,92 @@
+{
+  "name": "chat2blend-desktop",
+  "version": "0.4.0",
+  "private": true,
+  "description": "从独立部件到 UV、贴图、骨骼与动作，一次导出可编辑工程和可交换的 GLB。",
+  "author": "nanhudev",
+  "license": "MIT",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "node stage.cjs && electron .",
+    "test": "node --test tests/*.test.cjs",
+    "package": "node stage.cjs && electron-builder --publish never",
+    "package:win": "node stage.cjs && electron-builder --win --x64 --publish never",
+    "test:ui": "node smoke.cjs",
+    "test:package": "node package-check.cjs"
+  },
+  "dependencies": {
+    "jose": "6.2.12"
+  },
+  "devDependencies": {
+    "electron": "44.7.0",
+    "electron-builder": "26.15.3",
+    "@playwright/test": "1.63.0"
+  },
+  "overrides": {
+    "image-size": "2.0.4"
+  },
+  "build": {
+    "appId": "dev.nanhu.chat2blend",
+    "productName": "Chat2Blend",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "*.cjs",
+      "*.json",
+      "index.html",
+      "style.css",
+      "!package-lock.json",
+      "!stage.cjs",
+      "!runtime/**",
+      "!smoke.cjs",
+      "!interactive-check.cjs",
+      "!package-check.cjs"
+    ],
+    "extraResources": [
+      {
+        "from": "runtime",
+        "to": "runtime"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "icons/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "chat2blend-${version}-Setup-${arch}.${ext}"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.productivity",
+      "hardenedRuntime": false
+    },
+    "artifactName": "chat2blend-${version}-${os}-${arch}.${ext}",
+    "portable": {
+      "artifactName": "chat2blend-${version}-Portable-${arch}.${ext}"
+    },
+    "icon": "icons/icon.png",
+    "publish": null
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nanhudev/chat2blend.git"
+  }
+}

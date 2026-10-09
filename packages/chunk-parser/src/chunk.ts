@@ -86,7 +86,9 @@ export class C2BChunkStream {
       const nl = text.indexOf("\n", this.scannedTo);
       const isLastLine = nl === -1;
       const lineEnd = isLastLine ? len : nl;
-      const line = text.slice(this.scannedTo, lineEnd);
+      // Windows file input preserves CRLF; exclude CR from marker matching
+      // without changing original offsets or the streamed code body.
+      const line = text.slice(this.scannedTo, lineEnd).replace(/\r$/, "");
 
       if (isLastLine && !final) {
         // partial line, wait for more input

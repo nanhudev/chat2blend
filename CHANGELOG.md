@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Visible desktop asset workbench, official ChatGPT OAuth and standalone installer builds.
+- Articulated robot asset recipe: separate parts, UV atlas, PBR textures, rigid skin, wave animation, editable Blender file and self-contained GLB. Real Blender and GLB round-trip acceptance tests included.
+
+### Fixed
+- Streaming chunk parsing preserves code offsets for Windows CRLF input.
+
 ## [0.2.1] - 2026-09-17
 
 ### Changed

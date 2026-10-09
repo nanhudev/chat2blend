@@ -1,0 +1,31 @@
+name: Real Blender executor contract
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  blender:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install Blender
+        run: sudo apt-get update && sudo apt-get install -y blender python3-numpy
+      - name: Test real geometry, errors and namespace recovery
+        run: npm run test:blender
+        env:
+          C2B_TEST_ARTIFACTS: artifacts/blender
+      - name: Test UV, textures, skin and animated GLB round trip
+        run: npm run test:asset
+        env:
+          C2B_ASSET_ARTIFACTS: artifacts/asset
+      - uses: actions/upload-artifact@v4
+        with:
+          name: blender-contract
+          path: artifacts

@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "recipe": "articulated-hard-surface-robot",
+  "blender": "5.1.2",
+  "parts": [
+    {
+      "name": "C2B_Torso",
+      "bone": "spine",
+      "vertices": 56,
+      "polygons": 54
+    },
+    {
+      "name": "C2B_Pelvis",
+      "bone": "root",
+      "vertices": 56,
+      "polygons": 54
+    },
+    {
+      "name": "C2B_Neck",
+      "bone": "head",
+      "vertices": 56,
+      "polygons": 54
+    },
+    {
+      "name": "C2B_Head",
+      "bone": "head",
+      "vertices": 56,
+      "polygons": 54
+    },
+    {
+      "name": "C2B_Visor",
+      "bone": "head",
+      "vertices": 56,
+      "polygons": 54
+    },
+    {
+      "name": "C2B_Shoulder_L",
+      "bone": "upper_arm.L",
+      "vertices": 56,
+      "polygons": 54
+    },
+    {
+      "name": "C2B_UpperArm_L",
+      "bone": "upper_arm.L",
+      "vertices": 56,
+      "polygons": 54
+    },
+    {
+      "name": "C2B_Forearm_L",
+      "bone": "forearm.L",
+      "vertices": 56,
+      "polygons": 54
+    },
+    {
+      "name": "C2B_Hand_L",
+      "bone": "hand.L",
+      "vertices": 56,
+      "polygons": 54
+    },
+    {
+      "name": "C2B_Thigh_L",
+      "bone": "thigh.L",
+      "vertices": 56,
+      "polygons": 54
+    },
+    {
+      "name": "C2B_Shin_L",
+      "bone": "shin.L",
+      "vertices": 56,
+      "polygons": 54
+    },
+    {
+      "name": "C2B_Foot_L",
+      "bone": "foot.L",
+      "vertices": 56,
+      "polygons": 54
+    },
+    {
+      "name": "C2B_Shoulder_R",
+      "bone": "upper_arm.R",
+      "vertices": 56,
+      "polygons": 54
+    },
+    {
+      "name": "C2B_UpperArm_R",
+      "bone": "upper_arm.R",
+      "vertices": 56,
+      "polygons": 54
+    },
+    {
+      "name": "C2B_Forearm_R",
+      "bone": "forearm.R",
+      "vertices": 56,
+      "polygons": 54
+    },
+    {
+      "name": "C2B_Hand_R",
+      "bone": "hand.R",
+      "vertices": 56,
+      "polygons": 54
+    },
+    {
+      "name": "C2B_Thigh_R",
+      "bone": "thigh.R",
+      "vertices": 56,
+      "polygons": 54
+    },
+    {
+      "name": "C2B_Shin_R",
+      "bone": "shin.R",
+      "vertices": 56,
+      "polygons": 54
+    },
+    {
+      "name": "C2B_Foot_R",
+      "bone": "foot.R",
+      "vertices": 56,
+      "polygons": 54
+    }
+  ],
+  "bones": [
+    "root",
+    "spine",
+    "head",
+    "upper_arm.L",
+    "forearm.L",
+    "hand.L",
+    "upper_arm.R",
+    "forearm.R",
+    "hand.R",
+    "thigh.L",
+    "shin.L",
+    "foot.L",
+    "thigh.R",
+    "shin.R",
+    "foot.R"
+  ],
+  "animation": "C2B_Wave",
+  "textures": [
+    "base_color.png",
+    "roughness.png",
+    "normal.png"
+  ],
+  "checks": {
+    "separate_parts": true,
+    "uv_nonempty": true,
+    "uv_in_bounds": true,
+    "all_vertices_weighted": true,
+    "rig_moves_geometry": true,
+    "texture_files": true,
+    "glb_roundtrip_meshes": true,
+    "glb_roundtrip_skin": true,
+    "glb_embedded_textures": true,
+    "glb_roundtrip_animation_deforms": true
+  },
+  "limitations": [
+    "Rigid component weights; not an organic character rig.",
+    "Flat normal map and procedural paint; not a high-poly normal bake."
+  ]
+}
